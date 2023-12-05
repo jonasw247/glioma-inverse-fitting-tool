@@ -35,3 +35,8 @@ result["final_state"]
 import matplotlib.pyplot as plt
 plt.imshow(result["final_state"][:, :, 50])
 # %%
+import pickle
+a =np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_05-22_08_31_gen_1/results.npy", allow_pickle=True)
+# %%
+np.max(a)
+# %%
