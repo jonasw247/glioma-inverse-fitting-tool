@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     settings["workers"] = 8
     settings["sigma0"] = 0.02
-    settings["generations"] = 1
+    settings["generations"] = 20
 
     solver = cmaesForFWD.CmaesSolver(settings, WM, GM, FLAIR, T1c, pet)
     resultTumor, resultDict = solver.run()
