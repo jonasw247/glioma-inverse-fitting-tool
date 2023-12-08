@@ -22,31 +22,31 @@ def writeNii(array, path = "", affine = np.eye(4)):
 
 
 class CmaesSolver():
-    def __init__(self,  settings, wm, gm, flair, t1c, pet):
+    def __init__(self,  settings, wm, gm, flair, enhancing, pet, necrotic):
         self.settings = settings
         self.wm = wm
         self.gm = gm
-        self.flair = flair
-        self.t1c = t1c
+        self.edema = flair
+        self.enhancing = enhancing
         self.pet = pet
+        self.necrotic = necrotic
 
 
-    def lossfunction(self, tumor):
+    def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
 
         lambdaFlair = 0.333
         lambdaT1c = 0.333
         lambdaPET = 0.333
 
-        thresholdT1c = 0.675
-        thresholdFlair = 0.25
-
-        lossPet = np.mean(np.abs(tumor - self.pet))
-        lossFlair = 1 - dice(tumor > thresholdFlair, self.flair)
-        lossT1c = 1 - dice(tumor > thresholdT1c, self.t1c)
+        petInsideTumorRegion = self.pet * np.logical_or(self.edema, self.enhancing)
+        lossPet = 1 - np.corrcoef(tumor.copy().flatten(), petInsideTumorRegion.copy().flatten() )[0,1]
+        
+        proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
+        lossFlair = 1 - dice(proposedEdema, self.edema)
+        lossT1c = 1 - dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
         loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c + lambdaPET * lossPet
 
         return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet}
-
 
 
     def forward(self, x):
@@ -67,9 +67,11 @@ class CmaesSolver():
 
     def getLoss(self, x):
 
-        tumor = self.forward(x)
+        tumor = self.forward(x[:-2])
         
-        loss, lossDir = self.lossfunction(tumor)
+        thresholdT1c = x[-2]	
+        thresholdFlair = x[-1]
+        loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
         
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
@@ -78,7 +80,9 @@ class CmaesSolver():
     def run(self):
         start = time.time()
         
-        trace = cmaes.cmaes(self.getLoss, ( self.settings["NxT1_pct0"], self.settings["NyT1_pct0"], self.settings["NzT1_pct0"], self.settings["dw0"], self.settings["rho0"]), self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange= self.settings["parameterRanges"])
+        initValues = (self.settings["NxT1_pct0"], self.settings["NyT1_pct0"], self.settings["NzT1_pct0"], self.settings["dw0"], self.settings["rho0"], self.settings["thresholdT1c"], self.settings["thresholdFlair"])
+
+        trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange= self.settings["parameterRanges"])
 
         #trace = np.array(trace)
         nsamples, y0s, xs0s, sigmas, Cs, pss, pcs, Cmus, C1s, xmeans, lossDir = [], [], [], [], [], [], [], [], [], [], []
