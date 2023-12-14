@@ -51,7 +51,7 @@ class CmaesSolver():
         if not loss<=1:
             loss = 1
 
-        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet}
+        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet, "lossTotal":loss}
 
 
     def forward(self, x):
@@ -110,7 +110,14 @@ class CmaesSolver():
             xmeans.append(element[9])
             lossDir.append(element[10])
 
-        opt = xmeans[-1]
+        
+        
+        minLoss = 1
+        for i in range(len(lossDir)):
+            for j in range(len(lossDir[i])):
+                if lossDir[i][j]["lossTotal"] < minLoss:
+                    minLoss = lossDir[i][j]["lossTotal"]
+                    opt = lossDir[i][j]["allParams"]
 
         tumor = self.forward(opt)
         end = time.time()
@@ -128,7 +135,7 @@ class CmaesSolver():
         resultDict["C1s"] = C1s
         resultDict["xmeans"] = xmeans
         resultDict["lossDir"] = lossDir
-
+        resultDict["minLoss"] = minLoss
         resultDict["opt_params"] = opt
         resultDict["time_min"] = (end - start) / 60
         
