@@ -47,6 +47,10 @@ class CmaesSolver():
         lossT1c = 1 - dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
         loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c + lambdaPET * lossPet
 
+        #catch none values
+        if not loss<=1:
+            loss = 1
+
         return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet}
 
 
@@ -78,6 +82,7 @@ class CmaesSolver():
         end_time = time.time()
 
         lossDir["time"] = end_time - start_time
+        lossDir["allParams"] = x
         
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
