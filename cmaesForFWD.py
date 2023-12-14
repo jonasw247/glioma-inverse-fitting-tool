@@ -60,7 +60,8 @@ class CmaesSolver():
             'wm': self.gm,      # White matter data
             'NxT1_pct': x[0],   # initial focal position (in percentages)
             'NyT1_pct': x[1],
-            'NzT1_pct': x[2]
+            'NzT1_pct': x[2],
+            'resolution_factor':self.settings["resolution_factor"]
         }
         print("run: ", x)
         return fwdSolver(parameters)["final_state"]
