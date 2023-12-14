@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     settings["workers"] = 8#8#8#8
     settings["sigma0"] = 0.02    
-    settings["resolution_factor"] = 0.5
+    settings["resolution_factor"] = 0.6
     settings["generations"] = 50
 
     solver = cmaesForFWD.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
