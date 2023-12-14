@@ -5,6 +5,7 @@ import nibabel as nib
 import time
 import nibabel as nib
 from forwardFK_FDM.solver import solver as fwdSolver
+import time
 
         
 def dice(a, b):
@@ -67,11 +68,15 @@ class CmaesSolver():
 
     def getLoss(self, x):
 
+        start_time = time.time()
         tumor = self.forward(x[:-2])
         
         thresholdT1c = x[-2]	
         thresholdFlair = x[-1]
         loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
+        end_time = time.time()
+
+        lossDir["time"] = end_time - start_time
         
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
