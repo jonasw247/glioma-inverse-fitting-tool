@@ -54,7 +54,7 @@ class CmaesSolver():
         return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet, "lossTotal":loss}
 
 
-    def forward(self, x, resolution_factor):
+    def forward(self, x, resolution_factor =1.0):
 
         parameters = {
             'Dw': x[4],         # Diffusion coefficient for white matter
@@ -74,7 +74,19 @@ class CmaesSolver():
     def getLoss(self, x, gen):
 
         start_time = time.time()
-        resolution_factor = self.settings["resolution_factor"]
+
+        #check if resolution factor is float or dict
+        if isinstance(self.settings["resolution_factor"], dict):
+
+            for relativeGen, resFactor in self.settings["resolution_factor"].items():
+                if  gen /self.settings["generations"] >=  relativeGen :
+                    resolution_factor = resFactor
+        
+        elif isinstance(self.settings["resolution_factor"], float):
+            resolution_factor = self.settings["resolution_factor"]
+        else:
+            raise ValueError("resolution_factor has to be float or dict")
+        
         tumor = self.forward(x[:-2], resolution_factor)
         
         thresholdT1c = x[-2]	
@@ -112,7 +124,6 @@ class CmaesSolver():
             xmeans.append(element[9])
             lossDir.append(element[10])
 
-        
         
         minLoss = 1
         for i in range(len(lossDir)):

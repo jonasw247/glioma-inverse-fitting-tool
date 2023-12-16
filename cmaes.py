@@ -82,10 +82,11 @@ def cmaes(fun, x0, sigma, g_max, trace=False, workers=0, parameterRange=None):
                     xs[j][i] = np.clip(xs[j][i], parameterRange[i][0], parameterRange[i][1])
 
         if workers == 0:
-            list = [fun(e) for e in xs]
+            list = [fun(e, gen) for e in xs]
         else:
             with multiprocessing.Pool(workers) as pool:
-                list = pool.map(fun, xs)
+                list = pool.starmap(fun, [(x, gen) for x in xs])
+                #list = pool.map(fun, xs, gen)
 
         ys = [x[0] for x in list]
         lossDir = [x[1] for x in list]

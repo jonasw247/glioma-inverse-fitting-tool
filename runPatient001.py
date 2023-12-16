@@ -62,10 +62,11 @@ if __name__ == '__main__':
     settings["NyT1_pct0"] = float(com[1] / np.shape(FLAIR)[1])
     settings["NzT1_pct0"] = float(com[2] / np.shape(FLAIR)[2])
 
-    settings["workers"] = 8#8#8#8
+    settings["workers"] = 8#8#8#8#8
     settings["sigma0"] = 0.02    
-    settings["resolution_factor"] = 0.6
-    settings["generations"] = 50
+    # if dir it changes with generations: key = from relative generations, value = resolution factor
+    settings["resolution_factor"] ={ 0: 0.6, 0.333: 0.8, 0.6666: 1.0   }# 1# 0.6
+    settings["generations"] = int(1500 /8) # 10000 samples
 
     solver = cmaesForFWD.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
     resultTumor, resultDict = solver.run()

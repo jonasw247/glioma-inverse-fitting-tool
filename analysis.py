@@ -20,6 +20,7 @@ res= np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-06_42_07_gen_1250/results.npy", allow_pickle=True).item()
 
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_16-21_25_01_gen_6/results.npy", allow_pickle=True).item()
 # %%
 res.keys()
 
@@ -38,9 +39,9 @@ print("opt", opt)
 print("bestLossDir", bestLossDir)
 #%%
 
-lossPet, lossT1c, lossFlair, times, xs = [], [], [], [], []
+lossPet, lossT1c, lossFlair, times, xs, resfactor = [], [], [], [], [], []
 for i in range(len(res["lossDir"])):
-    lossPet_, lossT1c_, lossFlair_, times_, xs_ = [], [], [], [], []
+    lossPet_, lossT1c_, lossFlair_, times_, xs_, resfactor_ = [], [], [], [], [], []
     for j in range(len(res["lossDir"][i])):
         if not res["lossDir"][i][j]["lossTotal"] <=1:
             print("error", i, j, res["lossDir"][i][j]["lossTotal"])
@@ -53,11 +54,13 @@ for i in range(len(res["lossDir"])):
         lossFlair_.append(res["lossDir"][i][j]["lossFlair"])
         times_.append(res["lossDir"][i][j]["time"])
         xs_.append(res["lossDir"][i][j]["allParams"])
+        resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
     lossPet.append(lossPet_)
     lossT1c.append(lossT1c_)
     lossFlair.append(lossFlair_)
     times.append(times_)
     xs.append(xs_)
+    resfactor.append(resfactor_)
 
 times = np.array(times )/60
 xs = np.array(xs)
@@ -69,11 +72,14 @@ def plotValues(values, yLab, title):
         plt.scatter([res["nsamples"][i]]*len(values[i]), values[i], color="tab:blue", marker=".")
     plt.ylabel(yLab)
     plt.xlabel("Generation")
-    plt.title(title)
+    plt.title(yLab + " ---  " + title)
     plt.show()
 
 title = "Samples: " + np.max(res["nsamples"]).astype(str) + " - cumulative time: " + str(np.round(np.sum(times), 2)) + " - parallel time: " + str(np.round(res["time_min"], 1)) + "min"
 plotValues(times, "time [min]", title)
+#%%
+plotValues(resfactor, "resolution_factor", title)
+
 #%%
 #plotValues(lossPet, "lossPet", title)
 #plotValues(lossT1c, "lossT1c")
