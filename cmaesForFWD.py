@@ -54,7 +54,7 @@ class CmaesSolver():
         return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet, "lossTotal":loss}
 
 
-    def forward(self, x):
+    def forward(self, x, resolution_factor):
 
         parameters = {
             'Dw': x[4],         # Diffusion coefficient for white matter
@@ -65,16 +65,17 @@ class CmaesSolver():
             'NxT1_pct': x[0],   # initial focal position (in percentages)
             'NyT1_pct': x[1],
             'NzT1_pct': x[2],
-            'resolution_factor':self.settings["resolution_factor"]
+            'resolution_factor':resolution_factor
         }
         print("run: ", x)
         return fwdSolver(parameters)["final_state"]
 
 
-    def getLoss(self, x):
+    def getLoss(self, x, gen):
 
         start_time = time.time()
-        tumor = self.forward(x[:-2])
+        resolution_factor = self.settings["resolution_factor"]
+        tumor = self.forward(x[:-2], resolution_factor)
         
         thresholdT1c = x[-2]	
         thresholdFlair = x[-1]
@@ -83,6 +84,7 @@ class CmaesSolver():
 
         lossDir["time"] = end_time - start_time
         lossDir["allParams"] = x
+        lossDir["resolution_factor"] = resolution_factor
         
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
