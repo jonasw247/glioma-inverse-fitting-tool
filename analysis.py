@@ -13,18 +13,34 @@ res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/202
 
 
 res=np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-19_59_24_gen_50/results.npy", allow_pickle=True).item()
+
+#good one 
 res= np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-20_32_11_gen_200/results.npy", allow_pickle=True).item()
 
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-06_42_07_gen_1250/results.npy", allow_pickle=True).item()
+
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
 # %%
 res.keys()
 
 #%%
-res["lossDir"][30]
+lossDir = res["lossDir"]
+minLoss = 1
+for i in range(len(lossDir)):
+    for j in range(len(lossDir[i])):
+        if lossDir[i][j]["lossTotal"] < minLoss:
+            minLoss = lossDir[i][j]["lossTotal"]
+            opt = lossDir[i][j]["allParams"]
+            bestLossDir = lossDir[i][j]
+
+print("minLoss", minLoss)
+print("opt", opt)
+print("bestLossDir", bestLossDir)
 #%%
 
-lossPet, lossT1c, lossFlair, times = [], [], [], []
+lossPet, lossT1c, lossFlair, times, xs = [], [], [], [], []
 for i in range(len(res["lossDir"])):
-    lossPet_, lossT1c_, lossFlair_, times_ = [], [], [], []
+    lossPet_, lossT1c_, lossFlair_, times_, xs_ = [], [], [], [], []
     for j in range(len(res["lossDir"][i])):
         if not res["lossDir"][i][j]["lossTotal"] <=1:
             print("error", i, j, res["lossDir"][i][j]["lossTotal"])
@@ -36,16 +52,19 @@ for i in range(len(res["lossDir"])):
         lossT1c_.append(res["lossDir"][i][j]["lossT1c"])
         lossFlair_.append(res["lossDir"][i][j]["lossFlair"])
         times_.append(res["lossDir"][i][j]["time"])
+        xs_.append(res["lossDir"][i][j]["allParams"])
     lossPet.append(lossPet_)
     lossT1c.append(lossT1c_)
     lossFlair.append(lossFlair_)
     times.append(times_)
+    xs.append(xs_)
 
 times = np.array(times )/60
+xs = np.array(xs)
 
 #%%
-plt.figure(figsize=(12, 7))	
 def plotValues(values, yLab, title):
+    plt.figure(figsize=(12, 7))	
     for i in range(len((values))):
         plt.scatter([res["nsamples"][i]]*len(values[i]), values[i], color="tab:blue", marker=".")
     plt.ylabel(yLab)
@@ -55,11 +74,17 @@ def plotValues(values, yLab, title):
 
 title = "Samples: " + np.max(res["nsamples"]).astype(str) + " - cumulative time: " + str(np.round(np.sum(times), 2)) + " - parallel time: " + str(np.round(res["time_min"], 1)) + "min"
 plotValues(times, "time [min]", title)
-
-#plotValues(lossPet, "lossPet")
+#%%
+#plotValues(lossPet, "lossPet", title)
 #plotValues(lossT1c, "lossT1c")
 #plotValues(lossFlair, "lossFlair")
-
+plotValues(xs[:,:,3], "rho", title)
+plotValues(xs[:,:,4], "D", title)
+plotValues(xs[:,:,5], "thresholdFlair", title)
+plotValues(xs[:,:,6], "thresholdT1c", title)
+plotValues(xs[:,:,0], "x", title)
+plotValues(xs[:,:,1], "y", title)
+plotValues(xs[:,:,2], "z", title)
 #%%
 plt.figure(figsize=(12, 7))	
 plt.title(title)
@@ -71,9 +96,11 @@ plt.legend()
 #%%
 plt.figure(figsize=(12, 7))	
 
+combinedLoss = (np.array(lossPet) + np.array(lossT1c) + np.array(lossFlair) )/3
 plt.errorbar(res["nsamples"], np.mean(lossPet, axis=1), yerr=np.std(lossPet, axis=1), label="lossPet")
 plt.errorbar(res["nsamples"], np.mean(lossT1c, axis=1), yerr=np.std(lossT1c, axis=1),   label="lossT1c")
 plt.errorbar(res["nsamples"], np.mean(lossFlair, axis=1), yerr=np.std(lossFlair, axis=1),   label="lossFlair")
+plt.errorbar(res["nsamples"], np.mean(combinedLoss, axis=1), yerr=np.std(combinedLoss, axis=1),   label="combinedLoss")
 plt.ylabel("loss")
 plt.xlabel("number of samples")
 plt.legend()
@@ -153,3 +180,19 @@ fig.show()
 
 
 # %%
+
+from forwardFK_FDM.solver import solver as fwdSolver
+parameters = {
+            'Dw': x[4],         # Diffusion coefficient for white matter
+            'rho': x[3],        # Proliferation rate
+            'RatioDw_Dg': 10,   # Ratio of diffusion coefficients in white and grey matter
+            'gm': self.wm,      # Grey matter data
+            'wm': self.gm,      # White matter data
+            'NxT1_pct': x[0],   # initial focal position (in percentages)
+            'NyT1_pct': x[1],
+            'NzT1_pct': x[2],
+            'resolution_factor':self.settings["resolution_factor"]
+        }
+        print("run: ", x)
+fwdRes =  fwdSolver(parameters)["final_state"]
+fwdSolver.run()
