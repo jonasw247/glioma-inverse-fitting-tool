@@ -23,11 +23,11 @@ def writeNii(array, path = "", affine = np.eye(4)):
 
 
 class CmaesSolver():
-    def __init__(self,  settings, wm, gm, flair, enhancing, pet, necrotic):
+    def __init__(self,  settings, wm, gm, edema, enhancing, pet, necrotic):
         self.settings = settings
         self.wm = wm
         self.gm = gm
-        self.edema = flair
+        self.edema = edema
         self.enhancing = enhancing
         self.pet = pet
         self.necrotic = necrotic
