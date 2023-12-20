@@ -31,7 +31,7 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     settings["NyT1_pct0"] = float(com[1] / np.shape(edema)[1])
     settings["NzT1_pct0"] = float(com[2] / np.shape(edema)[2])
 
-    settings["workers"] = 9#8#8#8#8
+    settings["workers"] = 9#9#8#8#8#8
     settings["sigma0"] = 0.02    
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] ={ 0: 0.6, 0.8: 0.8, 0.9: 1.0   }
@@ -48,7 +48,7 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
 
 if __name__ == '__main__':
 
-    for patientID in range(2,45):
+    for patientID in range(991,1001):
         try:
             dataPath = "/mnt/8tb_slot8/jonas/datasets/18_data/rec" + ("0000" + str(patientID))[-3:] + "_pre/"
 
@@ -57,10 +57,15 @@ if __name__ == '__main__':
             affine = nib.load(dataPath + "segm.nii.gz").affine
 
             pet = nib.load(dataPath + "FET.nii.gz").get_fdata()
+            if pet.ndim == 4:
+                pet = pet[:,:,:,0]
             
             WM = nib.load(dataPath + "t1_wm.nii.gz").get_fdata()
 
             GM = nib.load(dataPath + "t1_gm.nii.gz").get_fdata()
+
+            assert WM.shape == GM.shape == pet.shape == segmentation.shape
+
         except:
             print("patient not found ", patientID)
             continue
