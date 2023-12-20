@@ -8,7 +8,6 @@ from scipy import ndimage
 import nibabel as nib
 import matplotlib.pyplot as plt
 import cmaesForFWD
-import ants
         
 #%%
 def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
@@ -31,8 +30,9 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     settings["NyT1_pct0"] = float(com[1] / np.shape(edema)[1])
     settings["NzT1_pct0"] = float(com[2] / np.shape(edema)[2])
 
-    settings["workers"] = 9#9#8#8#8#8
-    settings["sigma0"] = 0.02    
+    settings["workers"] = 9
+    settings["sigma0"] = 0.02
+
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] ={ 0: 0.6, 0.8: 0.8, 0.9: 1.0   }
     settings["generations"] = int(1000 /9) +1 # there are 9 samples in each step
