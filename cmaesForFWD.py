@@ -40,7 +40,10 @@ class CmaesSolver():
         lambdaPET = 0.333
 
         petInsideTumorRegion = self.pet * np.logical_or(self.edema, self.enhancing)
-        lossPet = 1 - np.corrcoef(tumor.copy().flatten(), petInsideTumorRegion.copy().flatten() )[0,1]
+        if np.sum(petInsideTumorRegion) == 0:
+            lossPet = 1
+        else:   
+            lossPet = 1 - np.corrcoef(tumor.copy().flatten(), petInsideTumorRegion.copy().flatten() )[0,1]
         
         proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
         lossFlair = 1 - dice(proposedEdema, self.edema)
@@ -128,7 +131,7 @@ class CmaesSolver():
         minLoss = 1
         for i in range(len(lossDir)):
             for j in range(len(lossDir[i])):
-                if lossDir[i][j]["lossTotal"] < minLoss:
+                if lossDir[i][j]["lossTotal"] <= minLoss:
                     minLoss = lossDir[i][j]["lossTotal"]
                     opt = lossDir[i][j]["allParams"]
 
