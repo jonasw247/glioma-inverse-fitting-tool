@@ -208,8 +208,7 @@ fig.show()
 
 
 # %%
-
-from forwardFK_FDM.solver import solver as fwdSolver
+from TumorGrowthToolkit.FK import Solver as fwdSolver
 parameters = {
             'Dw': x[4],         # Diffusion coefficient for white matter
             'rho': x[3],        # Proliferation rate
@@ -221,6 +220,6 @@ parameters = {
             'NzT1_pct': x[2],
             'resolution_factor':self.settings["resolution_factor"]
         }
-        print("run: ", x)
+print("run: ", x)
 fwdRes =  fwdSolver(parameters)["final_state"]
 fwdSolver.run()

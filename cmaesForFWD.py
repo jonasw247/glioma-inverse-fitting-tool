@@ -1,10 +1,8 @@
-
+from TumorGrowthToolkit.FK import Solver as fwdSolver
 import cmaes
 import numpy as np
 import nibabel as nib
 import time
-import nibabel as nib
-from forwardFK_FDM.solver import solver as fwdSolver
         
 def dice(a, b):
     boolA, boolB = a > 0, b > 0 
