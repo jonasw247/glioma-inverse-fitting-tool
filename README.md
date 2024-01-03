@@ -11,8 +11,11 @@ Run  the tutorialFisherKolmogorov.ipynb to see how to use the tool.
 
 # Overview
 
-cmaes.py is a Python module implementing the plain Covariance Matrix Adaptation Evolution Strategy (CMA-ES).
+### cmaes.py
+is a Python module implementing the plain Covariance Matrix Adaptation Evolution Strategy (CMA-ES).
 
-cmaesForFWD.py is a Python module implementing the CMA-ES for a specific forward solver. Defining the loss function and the forward solver is required.
+### cmaesForFWD.py
+is a Python module implementing the CMA-ES for a specific forward solver. Defining the loss function and the forward solver is required.
 
-analyse.py is a Python module implementing the analysis of the results of the CMA-ES.
+### analyse.py 
+is a Python module implementing the analysis of the results of the CMA-ES.
