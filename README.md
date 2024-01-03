@@ -7,7 +7,7 @@ With this tool you can fit a tumor growth model to patient data.
 Convolution Matrix Adaptation Evolution Strategy (CMA-ES) is used to find the optimal parameters fitting the data. The patient Data can be fitted to various tumor models e.g. Fisher-Kolmogorov (reaction diffusion) or Fisher-Kolmogorov with a nutrient field. For forward modelling the TumorGowthToolkit is used (https://github.com/m1balcerak/TumorGrowthToolkit).
 
 # Tutorial 
-Run  the tutorialFisherKolmogorov.ipynb to see how to use the tool.
+Run the **tutorialFisherKolmogorov.ipynb** to see how to use the tool.
 
 # Overview
 
