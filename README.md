@@ -20,5 +20,6 @@ is a Python module implementing the CMA-ES for a specific forward solver. Defini
 ### analyse.py 
 is a Python module implementing the analysis of the results of the CMA-ES.
 
-# Description 
+# Description
+## The Fisher-Kolmogorov (reaction-diffusion) model
 ![image](https://github.com/jonasw247/glioma-inverse-fitting-tool/assets/13008145/76f9145a-dfaa-4a4a-89e1-e2ab7d4815e7)
