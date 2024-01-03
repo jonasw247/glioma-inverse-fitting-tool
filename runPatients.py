@@ -45,7 +45,7 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     os.makedirs(resultpath, exist_ok=True)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_settings.npy", settings)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_results.npy", resultDict)
-    cmaesFK.tools(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
+    tools.writeNii(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
 
 # 18 patients
 if False: #__name__ == '__main__':

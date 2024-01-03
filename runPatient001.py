@@ -77,7 +77,7 @@ if __name__ == '__main__':
     os.makedirs(path, exist_ok=True)
     np.save(path + "settings.npy", settings)
     np.save(path + "results.npy", resultDict)
-    cmaesFK.tools(resultTumor, path = path+"result.nii.gz", affine = affine)
+    tools.writeNii(resultTumor, path = path+"result.nii.gz", affine = affine)
 
 
 
