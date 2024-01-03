@@ -8,7 +8,6 @@ from scipy import ndimage
 import nibabel as nib
 import matplotlib.pyplot as plt
 import cmaesForFWD
-import ants
 import tools
         
 #%%
