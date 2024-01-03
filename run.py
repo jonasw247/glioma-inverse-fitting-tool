@@ -9,6 +9,7 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 import cmaesForFWD
 import ants
+import tools
         
 #%%
 if __name__ == '__main__':
@@ -20,14 +21,14 @@ if __name__ == '__main__':
 
     brainmask =nib.load("/mnt/8tb_slot8/jonas/datasets/TGM/tgm/tgm006/preop/sub-tgm006_ses-preop_space-sri_brainmask.nii.gz").get_fdata()
 
-    t1c = nib.load("/mnt/8tb_slot8/jonas/datasets/TGM/tgm/tgm006/preop/sub-tgm006_ses-preop_space-sri_t1.nii.gz").get_fdata()
+    t1 = nib.load("/mnt/8tb_slot8/jonas/datasets/TGM/tgm/tgm006/preop/sub-tgm006_ses-preop_space-sri_t1.nii.gz").get_fdata()
 
     pet = nib.load("/mnt/8tb_slot8/jonas/datasets/TGM/tgm/tgm006/preop/sub-tgm006_ses-preop_space-sri_fet.nii.gz").get_fdata()
 
     pet = pet * brainmask
     pet = pet / np.max(pet)
 
-    img = ants.from_numpy(t1c)
+    img = ants.from_numpy(t1)
     #segment without tumor as it is wrong
     mask = ants.from_numpy(brainmask - (segmentation >0))
     
@@ -70,9 +71,11 @@ if __name__ == '__main__':
     settings["NyT1_pct0"] = float(com[1] / np.shape(FLAIR)[1])
     settings["NzT1_pct0"] = float(com[2] / np.shape(FLAIR)[2])
 
+    #settings
     settings["workers"] = 8#8
     settings["sigma0"] = 0.02
-    settings["generations"] = 50
+    settings["resolution_factor"] = 0.5
+    settings["generations"] = 20
 
     solver = cmaesForFWD.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
     resultTumor, resultDict = solver.run()
@@ -83,7 +86,7 @@ if __name__ == '__main__':
     os.makedirs(path, exist_ok=True)
     np.save(path + "settings.npy", settings)
     np.save(path + "results.npy", resultDict)
-    cmaesForFWD.writeNii(resultTumor, path = path+"result.nii.gz", affine = affine)
+    cmaesForFWD.tools(resultTumor, path = path+"result.nii.gz", affine = affine)
 
 
 

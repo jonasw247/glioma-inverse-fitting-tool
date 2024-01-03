@@ -9,6 +9,7 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 import cmaesForFWD
 import ants
+import tools
         
 #%%
 if __name__ == '__main__':
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     os.makedirs(path, exist_ok=True)
     np.save(path + "settings.npy", settings)
     np.save(path + "results.npy", resultDict)
-    cmaesForFWD.writeNii(resultTumor, path = path+"result.nii.gz", affine = affine)
+    cmaesForFWD.tools(resultTumor, path = path+"result.nii.gz", affine = affine)
 
 
 

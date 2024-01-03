@@ -5,8 +5,6 @@ import nibabel as nib
 import time
 import nibabel as nib
 from forwardFK_FDM.solver import solver as fwdSolver
-import time
-
         
 def dice(a, b):
     boolA, boolB = a > 0, b > 0 
@@ -14,13 +12,6 @@ def dice(a, b):
         return 0
 
     return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
-
-def writeNii(array, path = "", affine = np.eye(4)):
-    if path == "":
-        path = "%dx%dx%dle.nii.gz" % np.shape(array)
-    nibImg = nib.Nifti1Image(array, affine)
-    nib.save(nibImg, path)
-
 
 class CmaesSolver():
     def __init__(self,  settings, wm, gm, edema, enhancing, pet, necrotic):

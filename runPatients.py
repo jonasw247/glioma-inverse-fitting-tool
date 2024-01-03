@@ -8,6 +8,7 @@ from scipy import ndimage
 import nibabel as nib
 import matplotlib.pyplot as plt
 import cmaesForFWD
+import tools
         
 #%%
 def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
@@ -44,7 +45,7 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     os.makedirs(resultpath, exist_ok=True)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_settings.npy", settings)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_results.npy", resultDict)
-    cmaesForFWD.writeNii(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
+    cmaesForFWD.tools(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
 
 # 18 patients
 if False: #__name__ == '__main__':
