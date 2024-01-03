@@ -1,4 +1,8 @@
 #%%
+"""
+This file is for plotting of various results from the results.npy file
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -17,10 +21,17 @@ res=np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_
 #good one 
 res= np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-20_32_11_gen_200/results.npy", allow_pickle=True).item()
 
+#largeTest full res
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-06_42_07_gen_1250/results.npy", allow_pickle=True).item()
 
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_16-21_25_01_gen_6/results.npy", allow_pickle=True).item()
+#res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
+
+# test with resolution increase in the very end 
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-00_16_39_gen_187/results.npy", allow_pickle=True).item()
+
+# test with resolution increase in steps
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-01_13_20_gen_187/results.npy", allow_pickle=True).item()
+
 # %%
 res.keys()
 
@@ -37,6 +48,14 @@ for i in range(len(lossDir)):
 print("minLoss", minLoss)
 print("opt", opt)
 print("bestLossDir", bestLossDir)
+
+print("----------------------------")
+
+print("best Total loss ", bestLossDir["lossTotal"])
+print("best Pet corr   ", 1-bestLossDir["lossPet"])
+print("best T1c dice   ", 1-bestLossDir["lossT1c"])
+print("best Flair dice ", 1-bestLossDir["lossFlair"])
+
 #%%
 
 lossPet, lossT1c, lossFlair, times, xs, resfactor = [], [], [], [], [], []
@@ -54,7 +73,10 @@ for i in range(len(res["lossDir"])):
         lossFlair_.append(res["lossDir"][i][j]["lossFlair"])
         times_.append(res["lossDir"][i][j]["time"])
         xs_.append(res["lossDir"][i][j]["allParams"])
-        resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
+        try:
+            resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
+        except:
+            resfactor_.append(1)
     lossPet.append(lossPet_)
     lossT1c.append(lossT1c_)
     lossFlair.append(lossFlair_)
@@ -71,7 +93,7 @@ def plotValues(values, yLab, title):
     for i in range(len((values))):
         plt.scatter([res["nsamples"][i]]*len(values[i]), values[i], color="tab:blue", marker=".")
     plt.ylabel(yLab)
-    plt.xlabel("Generation")
+    plt.xlabel("Samples")
     plt.title(yLab + " ---  " + title)
     plt.show()
 
