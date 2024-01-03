@@ -7,7 +7,7 @@ import time
 from scipy import ndimage
 import nibabel as nib
 import matplotlib.pyplot as plt
-import cmaesForFWD
+import cmaesFK
 import tools
         
 #%%
@@ -38,14 +38,14 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     settings["resolution_factor"] ={ 0: 0.6, 0.8: 0.8, 0.9: 1.0   }
     settings["generations"] = int(1000 /9) +1 # there are 9 samples in each step
 
-    solver = cmaesForFWD.CmaesSolver(settings, WM, GM, edema, enhancing, pet, necrotic)
+    solver = cmaesFK.CmaesSolver(settings, WM, GM, edema, enhancing, pet, necrotic)
     resultTumor, resultDict = solver.run()
 
     # save results
     os.makedirs(resultpath, exist_ok=True)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_settings.npy", settings)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_results.npy", resultDict)
-    cmaesForFWD.tools(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
+    cmaesFK.tools(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
 
 # 18 patients
 if False: #__name__ == '__main__':
