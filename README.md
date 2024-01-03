@@ -1,4 +1,4 @@
-# Glioma Inverse Fitting Tool (GIFT)
+# Glioma Inverse Fitting Tool
 
 With this tool you can fit a tumor growth model to patient data. 
 
