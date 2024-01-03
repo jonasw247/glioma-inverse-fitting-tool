@@ -60,7 +60,8 @@ class CmaesSolver():
             'resolution_factor':resolution_factor
         }
         print("run: ", x)
-        return fwdSolver(parameters)["final_state"]
+        solver = fwdSolver(parameters)
+        return solver.solve()["final_state"]
 
 
     def getLoss(self, x, gen):
