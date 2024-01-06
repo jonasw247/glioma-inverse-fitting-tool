@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from FK_2c_cmaes import writeNii
 
-base_path = '/Users/michal/Documents/cmaesForPythonFWD/results/2023_12_21-12_43_38_gen_5/'
+base_path = '/Users/michal/Documents/cmaesForPythonFWD/results/2023_12_21-13_38_16_gen_10/'
 #%%
 # Load results
 res = np.load(f"{base_path}/results.npy", allow_pickle=True).item()

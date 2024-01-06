@@ -4,16 +4,22 @@ import numpy as np
 import nibabel as nib
 import time
 import nibabel as nib
-from forwardFK_FDM.solver import solver as fwdSolver
+from TumorGrowthToolkit.FK_2c import Solver
 import time
 
-        
-def dice(a, b):
-    boolA, boolB = a > 0, b > 0 
-    if np.sum(boolA) + np.sum(boolB) == 0:
-        return 0
+def dice(true_mask, pred_mask):
+    intersection = np.sum(true_mask & pred_mask)
+    return 2. * intersection / (np.sum(true_mask) + np.sum(pred_mask))
 
-    return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
+def create_segmentation_map(P, N, th_necro_n, th_enhancing_p, th_edema_p):
+    segmentation_map = np.zeros(P.shape, dtype=int)
+    edema_mask = (P >= th_edema_p) & (P < th_enhancing_p)
+    segmentation_map[edema_mask] = 3
+    enhancing_core_mask = P >= th_enhancing_p
+    segmentation_map[enhancing_core_mask] = 1
+    necrotic_core_mask = N > th_necro_n
+    segmentation_map[necrotic_core_mask] = 4
+    return segmentation_map
 
 def writeNii(array, path = "", affine = np.eye(4)):
     if path == "":
@@ -33,28 +39,43 @@ class CmaesSolver():
         self.necrotic = necrotic
 
 
-    def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
+    def loss_function(self, tumor, thresholdT1c, thresholdFlair, thresholdNecro):
+        lambdaFlair = 0.250
+        lambdaT1c = 0.250
+        lambdaPET = 0.250
+        lambdaNecro = 0.250
 
-        lambdaFlair = 0.333
-        lambdaT1c = 0.333
-        lambdaPET = 0.333
+        # Create segmentation map
+        segmentation_map = create_segmentation_map(tumor['P'], tumor['N'], thresholdNecro, thresholdT1c, thresholdFlair)
 
+        # Compute dice scores for different regions
+        lossEdema = 1 - dice(segmentation_map == 3, self.edema)
+        lossEnhancing = 1 - dice(segmentation_map == 1, self.enhancing)
+        lossNecrotic = 1 - dice(segmentation_map == 4, self.necrotic)
+
+        # PET correlation
         petInsideTumorRegion = self.pet * np.logical_or(self.edema, self.enhancing)
-        lossPet = 1 - np.corrcoef(tumor.copy().flatten(), petInsideTumorRegion.copy().flatten() )[0,1]
-        
-        proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
-        lossFlair = 1 - dice(proposedEdema, self.edema)
-        lossT1c = 1 - dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
-        loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c + lambdaPET * lossPet
+        lossPet = 1 - np.corrcoef(tumor['P'].flatten(), petInsideTumorRegion.flatten())[0, 1]
 
-        #catch none values
-        if not loss<=1:
-            loss = 1
+        # Weighted loss
+        loss = (lambdaFlair * lossEdema +
+                lambdaT1c * lossEnhancing +
+                lambdaNecro * lossNecrotic +
+                lambdaPET * lossPet)
 
-        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet, "lossTotal":loss}
+        # Catch non-valid values
+        loss = min(loss, 1)
+
+        return loss, {
+            "lossEdema": lossEdema,
+            "lossEnhancing": lossEnhancing,
+            "lossNecrotic": lossNecrotic,
+            "lossPet": lossPet,
+            "lossTotal": loss
+        }
 
 
-    def forward(self, x, resolution_factor =1.0):
+    def forward(self, x, resolution_factor =0.5):
 
         parameters = {
             'Dw': x[4],         # Diffusion coefficient for white matter
@@ -68,7 +89,7 @@ class CmaesSolver():
             'resolution_factor':resolution_factor
         }
         print("run: ", x)
-        return fwdSolver(parameters)["final_state"]
+        return Solver(parameters)["final_state"]
 
 
     def getLoss(self, x, gen):
