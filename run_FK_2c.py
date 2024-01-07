@@ -13,8 +13,8 @@ if __name__ == '__main__':
     print("start")
 
     # Load data
-    segmentation = nib.load("/Users/michal/Documents/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/segm.nii.gz").get_fdata()
-    pet = nib.load("/Users/michal/Documents/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/FET.nii.gz").get_fdata()
+    segmentation = nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/segm.nii.gz").get_fdata()
+    pet = nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/FET.nii.gz").get_fdata()
 
     # Extract tumor regions
     FLAIR = segmentation == 3
@@ -22,8 +22,8 @@ if __name__ == '__main__':
     enhancing = segmentation == 1
 
     # Get probability images for Grey and White matter
-    GM =  nib.load("/Users/michal/Documents/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/gm_data.nii.gz").get_fdata()
-    WM =  nib.load("/Users/michal/Documents/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/wm_data.nii.gz").get_fdata()
+    GM =  nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/gm_data.nii.gz").get_fdata()
+    WM =  nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/wm_data.nii.gz").get_fdata()
 
     # Visualization
     plt.imshow(WM[:, :, 75], cmap="Greys",alpha=0.5)
@@ -54,28 +54,31 @@ if __name__ == '__main__':
 
 
     # Initialize parameters
-    settings["rho0"] = 0.1670243
-    settings["dw0"] = 0.513545
+    settings["rho0"] = 0.3
+    settings["dw0"] = 0.3
     # Add initial values for new parameters
-    settings["lambda_np0"] = 0.41054551
-    settings["sigma_np0"] = 0.06375344
-    settings["D_s0"] = 3.0144
-    settings["lambda_s0"] = 0.3977
+    settings["lambda_np0"] = 0.5
+    settings["sigma_np0"] = 0.05
+    settings["D_s0"] = 1.0144
+    settings["lambda_s0"] = 0.3
 
     # Thresholds and center of mass
-    settings["thresholdFlair0"] = 0.1800172864753556
-    settings["thresholdT1c0"] = 0.2930917239803693
-    settings["thresholdNecro0"] = 0.06983855590510551  # New threshold for necrosis
+    settings["thresholdFlair0"] = 0.1
+    settings["thresholdT1c0"] = 0.4
+    settings["thresholdNecro0"] = 0.05  # New threshold for necrosis
 
     com = ndimage.measurements.center_of_mass(necrotic)
     settings["NxT1_pct0"] = float(com[0] / np.shape(necrotic)[0])
     settings["NyT1_pct0"] = float(com[1] / np.shape(necrotic)[1])
     settings["NzT1_pct0"] = float(com[2] / np.shape(necrotic)[2])
 
-    settings["workers"] = 8
+    settings["workers"] = 16
     settings["sigma0"] = 0.02
-    settings["generations"] = 20
-
+    settings["generations"] = 800
+    
+    # if dir it changes with generations: key = from relative generations, value = resolution factor
+    settings["resolution_factor"] ={ 0: 0.4, 0.6: 0.5, 0.9: 0.65   }
+    
     # Create solver instance and run
     solver = FK_2c_cmaes.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
     resultTumor, resultDict = solver.run()

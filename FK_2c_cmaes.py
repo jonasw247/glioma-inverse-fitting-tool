@@ -103,7 +103,20 @@ class CmaesSolver():
 
     def getLoss(self, x, gen):
         start_time = time.time()
-        tumor = self.forward(x[:-3])
+        
+        #check if resolution factor is float or dict
+        if isinstance(self.settings["resolution_factor"], dict):
+
+            for relativeGen, resFactor in self.settings["resolution_factor"].items():
+                if  gen /self.settings["generations"] >=  relativeGen :
+                    resolution_factor = resFactor
+        
+        elif isinstance(self.settings["resolution_factor"], float):
+            resolution_factor = self.settings["resolution_factor"]
+        else:
+            raise ValueError("resolution_factor has to be float or dict")
+        
+        tumor = self.forward(x[:-3],resolution_factor)
         
         thresholdFlair = x[-3]
         thresholdT1c = x[-2]
@@ -113,7 +126,7 @@ class CmaesSolver():
 
         lossDir["time"] = end_time - start_time
         lossDir["allParams"] = x
-        lossDir["resolution_factor"] = 0.5
+        lossDir["resolution_factor"] = resolution_factor
         
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
