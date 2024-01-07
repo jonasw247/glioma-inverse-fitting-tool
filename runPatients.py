@@ -87,7 +87,7 @@ if False: #__name__ == '__main__':
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #tgm
-if __name__ == '__main__':
+if False: # __name__ == '__main__':
 
     for patientID in range(41,100):
         try:
@@ -132,3 +132,52 @@ if __name__ == '__main__':
         resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results/" + ("0000" + str(patientID))[-3:] + "/"
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
+#respond
+if __name__ == '__main__':
+    for patientID in range(120,200):
+        try:
+            # save the parameters and the tumor
+            patientNumber = ("000000" + str(patientID))[-3:]
+            print("patient number: ", patientNumber)
+
+            patientPath = "/mnt/8tb_slot8/jonas/datasets/ReSPOND/respond/respond_tum_"+ patientNumber+"/d0/"
+            
+            segmentationNiiPath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_seg.nii.gz"
+            segm = nib.load(segmentationNiiPath)
+
+            segmentation = segm.get_fdata()
+            affine = segm.affine
+
+            tissuePath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_tissuemask.nii.gz"
+            tissue = nib.load(tissuePath).get_fdata()
+
+        except:
+            print("patient not found ", patientID)
+            continue
+
+        try:
+            petPath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_fet.nii.gz"
+            pet = nib.load(petPath).get_fdata()
+            if pet.ndim == 4:
+                pet = pet[:,:,:,0]
+            #pet = pet * brainmask
+            pet = pet / np.max(pet)
+        except: # if no pet just set it to 0
+            pet = np.zeros_like(tissue)
+
+        # different labels then other datasets
+        edema = np.logical_or(segmentation == 3, segmentation == 2)
+        necrotic = segmentation == 1
+        enhancing = segmentation == 4
+
+        WM, GM = segmentation *0.0, segmentation *0.0
+        WM[tissue == 3] = 1.0
+        GM[tissue == 2] = 1.0
+
+        WM[segmentation >0] = 1.0
+
+        assert WM.shape == GM.shape == pet.shape == segmentation.shape
+
+        datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
+        resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/' + str(patientNumber) + '/'
+        run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
