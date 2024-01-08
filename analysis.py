@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 #%%
+'''
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-02_05_02_gen_20/results.npy", allow_pickle=True).item()
 
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-13_28_47_gen_20/results.npy", allow_pickle=True).item()
@@ -31,6 +32,9 @@ res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/202
 
 # test with resolution increase in steps
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-01_13_20_gen_187/results.npy", allow_pickle=True).item()
+'''
+#Respond
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/002/gen_112_results.npy", allow_pickle=True).item()
 
 # %%
 res.keys()
@@ -108,8 +112,8 @@ plotValues(resfactor, "resolution_factor", title)
 #plotValues(lossFlair, "lossFlair")
 plotValues(xs[:,:,3], "rho", title)
 plotValues(xs[:,:,4], "D", title)
-plotValues(xs[:,:,5], "thresholdFlair", title)
-plotValues(xs[:,:,6], "thresholdT1c", title)
+plotValues(xs[:,:,5], "thresholdT1c", title)
+plotValues(xs[:,:,6], "thresholdFlair", title)
 plotValues(xs[:,:,0], "x", title)
 plotValues(xs[:,:,1], "y", title)
 plotValues(xs[:,:,2], "z", title)
@@ -145,8 +149,8 @@ res.keys()
 # %%
 params = np.array(res["xs0s"])
 plt.title("thresholds")
-plt.plot(res["nsamples"], params.T[6], label="T1c")
-plt.plot(res["nsamples"], params.T[5], label="Flair")
+plt.plot(res["nsamples"], params.T[6], label="Edema")
+plt.plot(res["nsamples"], params.T[5], label="Enhancing")
 plt.legend()
 plt.xlabel("nsamples")
 plt.show()
