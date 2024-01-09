@@ -15,12 +15,12 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
     #%%
     settings = {}
     # ranges from LMI paper with T = 100
-    parameterRanges = [[0, 1], [0, 1], [0, 1], [0.0001, 0.225], [0.001, 3], [0.5, 0.85], [0.001, 0.5]] 
+    parameterRanges = [[0, 1], [0, 1], [0, 1], [0.0001, 3.0], [0.001, 5.0], [0.5, 0.85], [0.001, 0.5]] 
     settings["parameterRanges"] = parameterRanges
 
     # init parameter
-    settings["rho0"] = 0.02
-    settings["dw0"] = 0.001
+    settings["rho0"] = 0.15
+    settings["dw0"] = 0.15
 
     settings["thresholdT1c"] = 0.675
     settings["thresholdFlair"] = 0.25
@@ -87,9 +87,9 @@ if False: #__name__ == '__main__':
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #tgm
-if False: # __name__ == '__main__':
+if False: # if  __name__ == '__main__':
 
-    for patientID in range(41,100):
+    for patientID in range(0,20):
         try:
             dataPath = "/mnt/8tb_slot8/jonas/datasets/TGM/"
 
@@ -105,7 +105,6 @@ if False: # __name__ == '__main__':
             
             GM = nib.load(tissuePath + "sub-tgm"+ ("0000" + str(patientID))[-3:] +"_ses-preop_space-sri_t1_gm.nii.gz").get_fdata()
 
-        
         except:
             print("patient not found ", patientID)
             continue
@@ -130,11 +129,15 @@ if False: # __name__ == '__main__':
 
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
         resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results/" + ("0000" + str(patientID))[-3:] + "/"
+
+        #TODO del Test
+        pet = np.zeros_like(WM)
+        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results_withoutPet/" + ("0000" + str(patientID))[-3:] + "/"
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #respond
 if __name__ == '__main__':
-    for patientID in range(120,200):
+    for patientID in range(120,130):
         try:
             # save the parameters and the tumor
             patientNumber = ("000000" + str(patientID))[-3:]
@@ -179,5 +182,5 @@ if __name__ == '__main__':
         assert WM.shape == GM.shape == pet.shape == segmentation.shape
 
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
-        resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/' + str(patientNumber) + '/'
+        resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/' + str(patientNumber) + 'newSettings/'
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
