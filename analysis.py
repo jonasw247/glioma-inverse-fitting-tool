@@ -34,7 +34,12 @@ res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/202
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-01_13_20_gen_187/results.npy", allow_pickle=True).item()
 '''
 #Respond
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/002/gen_112_results.npy", allow_pickle=True).item()
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/003/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_newSettings2/003/gen_112_results.npy", allow_pickle=True).item()
+
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/121newSettings/gen_112_results.npy", allow_pickle=True).item()
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/120newSettings/gen_112_results.npy", allow_pickle=True).item()
 
 # %%
 res.keys()
@@ -227,3 +232,4 @@ parameters = {
 print("run: ", x)
 fwdRes =  fwdSolver(parameters)["final_state"]
 fwdSolver.run()
+# %%
