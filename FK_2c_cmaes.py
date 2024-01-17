@@ -46,10 +46,10 @@ class CmaesSolver():
 
 
     def loss_function(self, tumor, thresholdT1c, thresholdFlair, thresholdNecro):
-        lambdaFlair = 0.250
-        lambdaT1c = 0.250
+        lambdaFlair = 0.150
+        lambdaT1c = 0.350
         lambdaPET = 0.250
-        lambdaNecro = 0.250
+        lambdaNecro = 0.350
 
         # Create segmentation map
         segmentation_map = create_segmentation_map(tumor['P'], tumor['N'], thresholdNecro, thresholdT1c, thresholdFlair)

@@ -7,23 +7,39 @@ import time
 from scipy import ndimage
 import matplotlib.pyplot as plt
 import FK_2c_cmaes
+import argparse
 
 # %%
 if __name__ == '__main__':
     print("start")
 
-    # Load data
-    segmentation = nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/segm.nii.gz").get_fdata()
-    pet = nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/FET.nii.gz").get_fdata()
+    # Setup argument parser
+    parser = argparse.ArgumentParser(description='Process base_path.')
+    parser.add_argument('base_path', type=str, help='Base path for the data files')
+    args = parser.parse_args()
+
+    # Use the base_path from the argument
+    base_path = args.base_path
+
+    # Load data using os.path.join to concatenate the base path with the file names
+    segmentation = nib.load(os.path.join(base_path, "segm.nii.gz")).get_fdata()
+    pet = nib.load(os.path.join(base_path, "FET.nii.gz")).get_fdata()
+
+    try:
+        # Attempt to load the first set of files
+        GM = nib.load(os.path.join(base_path, "gm_data.nii.gz")).get_fdata()
+        WM = nib.load(os.path.join(base_path, "wm_data.nii.gz")).get_fdata()
+    except FileNotFoundError:
+        # If the first set of files is not found, load the alternative files
+        GM = nib.load(os.path.join(base_path, "t1_gm.nii.gz")).get_fdata()
+        WM = nib.load(os.path.join(base_path, "t1_wm.nii.gz")).get_fdata()
+
 
     # Extract tumor regions
     FLAIR = segmentation == 3
     necrotic = segmentation == 4
     enhancing = segmentation == 1
 
-    # Get probability images for Grey and White matter
-    GM =  nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/gm_data.nii.gz").get_fdata()
-    WM =  nib.load("/home/michal/TumorGrowthToolkit/synthetic_gens/synthetic_runs1T_FK_2c/synthetic1T_run0/wm_data.nii.gz").get_fdata()
 
     # Visualization
     plt.imshow(WM[:, :, 75], cmap="Greys",alpha=0.5)
@@ -74,10 +90,12 @@ if __name__ == '__main__':
 
     settings["workers"] = 16
     settings["sigma0"] = 0.02
-    settings["generations"] = 800
+    settings["generations"] = 502
     
     # if dir it changes with generations: key = from relative generations, value = resolution factor
-    settings["resolution_factor"] ={ 0: 0.4, 0.6: 0.5, 0.9: 0.65   }
+    #settings["resolution_factor"] ={0: 0.42, 0.6: 0.55, 0.9: 0.65}
+    settings["resolution_factor"] = 0.55
+
     
     # Create solver instance and run
     solver = FK_2c_cmaes.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
