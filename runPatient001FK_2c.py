@@ -7,7 +7,7 @@ import time
 from scipy import ndimage
 import nibabel as nib
 import matplotlib.pyplot as plt
-import cmaesForFWD
+import cmaesForFWDFK_2
 import ants
         
 #%%
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     settings["resolution_factor"] ={ 0: 0.6, 0.333: 0.8, 0.6666: 1.0   }# 1# 0.6
     settings["generations"] = int(1500 /8) # 10000 samples
 
-    solver = cmaesForFWD.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
+    solver = cmaesForFWDFK_2.CmaesSolver(settings, WM, GM, FLAIR, enhancing, pet, necrotic)
     resultTumor, resultDict = solver.run()
 
     # save results
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     os.makedirs(path, exist_ok=True)
     np.save(path + "settings.npy", settings)
     np.save(path + "results.npy", resultDict)
-    cmaesForFWD.writeNii(resultTumor, path = path+"result.nii.gz", affine = affine)
+    cmaesForFWDFK_2.writeNii(resultTumor, path = path+"result.nii.gz", affine = affine)
 
 
 
