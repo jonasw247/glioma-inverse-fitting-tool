@@ -95,7 +95,7 @@ if False: #__name__ == '__main__':
 #tgm
 if  __name__ == '__main__':
 
-    for patientID in range(20,200):
+    for patientID in range(60,200):
         try:
             dataPath = "/mnt/8tb_slot8/jonas/datasets/TGM/"
 
