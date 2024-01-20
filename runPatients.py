@@ -50,7 +50,7 @@ def run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath):
 # 18 patients
 if False: #__name__ == '__main__':
 
-    for patientID in range(0,1001):
+    for patientID in range(991,1001):
         try:
             dataPath = "/mnt/8tb_slot8/jonas/datasets/18_data/rec" + ("0000" + str(patientID))[-3:] + "_pre/"
 
@@ -75,9 +75,6 @@ if False: #__name__ == '__main__':
         #pet = pet * brainmask
         pet = pet / np.max(pet)
 
-        #TODO Del
-        pet = np.zeros_like(WM)
-
         #patient 006 has 2 and 3 for edema...
         edema = np.logical_or(segmentation == 3, segmentation == 2)
         necrotic = segmentation == 4
@@ -86,16 +83,13 @@ if False: #__name__ == '__main__':
         #WM[segmentation >0] = 1
 
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/18_data/18_data/resultsP" + ("0000" + str(patientID))[-3:] + "/"
-
-        #TODO del 
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/18_data/18_data_NoPet/resultsP" + ("0000" + str(patientID))[-3:] + "/"
+        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/18_data/resultsP" + ("0000" + str(patientID))[-3:] + "/"
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #tgm
-if  __name__ == '__main__':
+if False: # if  __name__ == '__main__':
 
-    for patientID in range(60,200):
+    for patientID in range(0,20):
         try:
             dataPath = "/mnt/8tb_slot8/jonas/datasets/TGM/"
 
@@ -138,32 +132,31 @@ if  __name__ == '__main__':
 
         #TODO del Test
         pet = np.zeros_like(WM)
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results_NoPet/" + ("0000" + str(patientID))[-3:] + "/"
+        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results_withoutPet/" + ("0000" + str(patientID))[-3:] + "/"
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #respond
-if False: # __name__ == '__main__':
-    for patientID in range(13,14):
-        #try:
-        # save the parameters and the tumor
-        patientNumber = ("000000" + str(patientID))[-3:]
-        print("patient number: ", patientNumber)
+if __name__ == '__main__':
+    for patientID in range(120,130):
+        try:
+            # save the parameters and the tumor
+            patientNumber = ("000000" + str(patientID))[-3:]
+            print("patient number: ", patientNumber)
 
-        patientPath = "/mnt/8tb_slot8/jonas/datasets/ReSPOND/respond/respond_tum_"+ patientNumber+"/d0/"
-        
-        segmentationNiiPath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_seg.nii.gz"
-        segm = nib.load(segmentationNiiPath)
+            patientPath = "/mnt/8tb_slot8/jonas/datasets/ReSPOND/respond/respond_tum_"+ patientNumber+"/d0/"
+            
+            segmentationNiiPath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_seg.nii.gz"
+            segm = nib.load(segmentationNiiPath)
 
-        segmentation = segm.get_fdata()
-        affine = segm.affine
+            segmentation = segm.get_fdata()
+            affine = segm.affine
 
-        tissuePath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_tissuemask.nii.gz"
-        tissue = nib.load(tissuePath).get_fdata()
+            tissuePath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_tissuemask.nii.gz"
+            tissue = nib.load(tissuePath).get_fdata()
 
-        #except:
-        
-        #    print("patient not found ", patientID)
-        #    continue
+        except:
+            print("patient not found ", patientID)
+            continue
 
         try:
             petPath = patientPath + "sub-respond_tum_"+ patientNumber+"_ses-d0_space-sri_fet.nii.gz"
@@ -189,6 +182,5 @@ if False: # __name__ == '__main__':
         assert WM.shape == GM.shape == pet.shape == segmentation.shape
 
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
-        resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_newSettings2/' + str(patientNumber) + '/'
+        resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/' + str(patientNumber) + 'newSettings/'
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
-# %%
