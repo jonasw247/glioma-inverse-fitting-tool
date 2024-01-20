@@ -1,9 +1,14 @@
 #%%
+"""
+This file is for plotting of various results from the results.npy file
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
 #%%
+'''
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-02_05_02_gen_20/results.npy", allow_pickle=True).item()
 
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-13_28_47_gen_20/results.npy", allow_pickle=True).item()
@@ -17,10 +22,25 @@ res=np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_
 #good one 
 res= np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-20_32_11_gen_200/results.npy", allow_pickle=True).item()
 
+#largeTest full res
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-06_42_07_gen_1250/results.npy", allow_pickle=True).item()
 
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_16-21_25_01_gen_6/results.npy", allow_pickle=True).item()
+#res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
+
+# test with resolution increase in the very end 
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-00_16_39_gen_187/results.npy", allow_pickle=True).item()
+
+# test with resolution increase in steps
+res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-01_13_20_gen_187/results.npy", allow_pickle=True).item()
+'''
+#Respond
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/003/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_newSettings2/003/gen_112_results.npy", allow_pickle=True).item()
+
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/121newSettings/gen_112_results.npy", allow_pickle=True).item()
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/120newSettings/gen_112_results.npy", allow_pickle=True).item()
+
 # %%
 res.keys()
 
@@ -37,6 +57,14 @@ for i in range(len(lossDir)):
 print("minLoss", minLoss)
 print("opt", opt)
 print("bestLossDir", bestLossDir)
+
+print("----------------------------")
+
+print("best Total loss ", bestLossDir["lossTotal"])
+print("best Pet corr   ", 1-bestLossDir["lossPet"])
+print("best T1c dice   ", 1-bestLossDir["lossT1c"])
+print("best Flair dice ", 1-bestLossDir["lossFlair"])
+
 #%%
 
 lossPet, lossT1c, lossFlair, times, xs, resfactor = [], [], [], [], [], []
@@ -54,7 +82,10 @@ for i in range(len(res["lossDir"])):
         lossFlair_.append(res["lossDir"][i][j]["lossFlair"])
         times_.append(res["lossDir"][i][j]["time"])
         xs_.append(res["lossDir"][i][j]["allParams"])
-        resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
+        try:
+            resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
+        except:
+            resfactor_.append(1)
     lossPet.append(lossPet_)
     lossT1c.append(lossT1c_)
     lossFlair.append(lossFlair_)
@@ -71,7 +102,7 @@ def plotValues(values, yLab, title):
     for i in range(len((values))):
         plt.scatter([res["nsamples"][i]]*len(values[i]), values[i], color="tab:blue", marker=".")
     plt.ylabel(yLab)
-    plt.xlabel("Generation")
+    plt.xlabel("Samples")
     plt.title(yLab + " ---  " + title)
     plt.show()
 
@@ -86,8 +117,8 @@ plotValues(resfactor, "resolution_factor", title)
 #plotValues(lossFlair, "lossFlair")
 plotValues(xs[:,:,3], "rho", title)
 plotValues(xs[:,:,4], "D", title)
-plotValues(xs[:,:,5], "thresholdFlair", title)
-plotValues(xs[:,:,6], "thresholdT1c", title)
+plotValues(xs[:,:,5], "thresholdT1c", title)
+plotValues(xs[:,:,6], "thresholdFlair", title)
 plotValues(xs[:,:,0], "x", title)
 plotValues(xs[:,:,1], "y", title)
 plotValues(xs[:,:,2], "z", title)
@@ -123,8 +154,8 @@ res.keys()
 # %%
 params = np.array(res["xs0s"])
 plt.title("thresholds")
-plt.plot(res["nsamples"], params.T[6], label="T1c")
-plt.plot(res["nsamples"], params.T[5], label="Flair")
+plt.plot(res["nsamples"], params.T[6], label="Edema")
+plt.plot(res["nsamples"], params.T[5], label="Enhancing")
 plt.legend()
 plt.xlabel("nsamples")
 plt.show()
@@ -186,8 +217,7 @@ fig.show()
 
 
 # %%
-
-from forwardFK_FDM.solver import solver as fwdSolver
+from TumorGrowthToolkit.FK import Solver as fwdSolver
 parameters = {
             'Dw': x[4],         # Diffusion coefficient for white matter
             'rho': x[3],        # Proliferation rate
@@ -199,6 +229,7 @@ parameters = {
             'NzT1_pct': x[2],
             'resolution_factor':self.settings["resolution_factor"]
         }
-        print("run: ", x)
+print("run: ", x)
 fwdRes =  fwdSolver(parameters)["final_state"]
 fwdSolver.run()
+# %%
