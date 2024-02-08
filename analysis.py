@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-#%%
+
 '''
 res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-02_05_02_gen_20/results.npy", allow_pickle=True).item()
 
@@ -41,8 +41,19 @@ res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_ne
 #res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/121newSettings/gen_112_results.npy", allow_pickle=True).item()
 #res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/120newSettings/gen_112_results.npy", allow_pickle=True).item()
 
+#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results/051/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results/016OldLoss/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_9NewStandard/016/gen_25_results.npy", allow_pickle=True).item()
+
+
 # %%
 res.keys()
+res["variableParameters"]
+#%%
+np.array(res["Cs"])[-1]
+
 
 #%%
 lossDir = res["lossDir"]
@@ -61,15 +72,15 @@ print("bestLossDir", bestLossDir)
 print("----------------------------")
 
 print("best Total loss ", bestLossDir["lossTotal"])
-print("best Pet corr   ", 1-bestLossDir["lossPet"])
+#print("best Pet corr   ", 1-bestLossDir["lossPet"])
 print("best T1c dice   ", 1-bestLossDir["lossT1c"])
 print("best Flair dice ", 1-bestLossDir["lossFlair"])
 
 #%%
 
-lossPet, lossT1c, lossFlair, times, xs, resfactor = [], [], [], [], [], []
+lossT1c, lossFlair, times, xs, resfactor, totalLoss = [], [], [], [], [], []
 for i in range(len(res["lossDir"])):
-    lossPet_, lossT1c_, lossFlair_, times_, xs_, resfactor_ = [], [], [], [], [], []
+    lossT1c_, lossFlair_, times_, xs_, resfactor_, totalLoss_ = [], [], [], [], [], []
     for j in range(len(res["lossDir"][i])):
         if not res["lossDir"][i][j]["lossTotal"] <=1:
             print("error", i, j, res["lossDir"][i][j]["lossTotal"])
@@ -77,7 +88,6 @@ for i in range(len(res["lossDir"])):
             print("error", i, j, res["lossDir"][i][j]["lossTotal"])
         if not res["lossDir"][i][j]["lossTotal"] == res["lossDir"][i][j]["lossTotal"]:
             print("error", i, j, res["lossDir"][i][j]["lossTotal"])
-        lossPet_.append(res["lossDir"][i][j]["lossPet"])
         lossT1c_.append(res["lossDir"][i][j]["lossT1c"])
         lossFlair_.append(res["lossDir"][i][j]["lossFlair"])
         times_.append(res["lossDir"][i][j]["time"])
@@ -86,15 +96,38 @@ for i in range(len(res["lossDir"])):
             resfactor_.append(res["lossDir"][i][j]["resolution_factor"])
         except:
             resfactor_.append(1)
-    lossPet.append(lossPet_)
+        try:
+            totalLoss_.append(res["lossDir"][i][j]["lossTotal"])
+        except:
+            totalLoss_.append(1)
     lossT1c.append(lossT1c_)
     lossFlair.append(lossFlair_)
     times.append(times_)
     xs.append(xs_)
     resfactor.append(resfactor_)
+    totalLoss.append(totalLoss_)
 
 times = np.array(times )/60
 xs = np.array(xs)
+lossCombined = 0.5 * np.array(lossFlair) + 0.5 * np.array(lossT1c)
+
+#%%
+plt.figure(figsize=(12, 7))	
+
+
+plt.errorbar(res["nsamples"], np.mean(lossT1c, axis=1), yerr=np.std(lossT1c, axis=1),   label="lossT1c")
+plt.errorbar(res["nsamples"], np.mean(lossFlair, axis=1), yerr=np.std(lossFlair, axis=1),   label="lossFlair")
+plt.errorbar(res["nsamples"], np.mean(lossCombined, axis=1) , yerr=np.std(lossCombined, axis=1),   label="combinedLoss")
+plt.errorbar(res["nsamples"], np.mean(totalLoss, axis=1) , yerr=np.std(totalLoss, axis=1),   label="totalLoss")
+plt.ylabel("loss")
+plt.xlabel("number of samples")
+plt.legend()
+#%%
+plt.figure(figsize=(12, 7))	
+
+plt.plot(res["nsamples"], res["sigmas"])
+plt.ylabel("sigma")
+plt.xlabel("number of samples")
 
 #%%
 def plotValues(values, yLab, title):
@@ -112,16 +145,10 @@ plotValues(times, "time [min]", title)
 plotValues(resfactor, "resolution_factor", title)
 
 #%%
-#plotValues(lossPet, "lossPet", title)
-#plotValues(lossT1c, "lossT1c")
-#plotValues(lossFlair, "lossFlair")
-plotValues(xs[:,:,3], "rho", title)
-plotValues(xs[:,:,4], "D", title)
-plotValues(xs[:,:,5], "thresholdT1c", title)
-plotValues(xs[:,:,6], "thresholdFlair", title)
-plotValues(xs[:,:,0], "x", title)
-plotValues(xs[:,:,1], "y", title)
-plotValues(xs[:,:,2], "z", title)
+
+#%%
+for i in range(10):
+    plotValues(xs[:,:,i], res["variableParameters"][i], title)
 #%%
 plt.figure(figsize=(12, 7))	
 plt.title(title)
@@ -129,24 +156,6 @@ plt.errorbar(res["nsamples"], np.mean(times, axis=1), yerr=np.std(times, axis=1)
 plt.ylabel("time [min]")
 plt.xlabel("nsamples")
 plt.legend()
-
-#%%
-plt.figure(figsize=(12, 7))	
-
-combinedLoss = (np.array(lossPet) + np.array(lossT1c) + np.array(lossFlair) )/3
-plt.errorbar(res["nsamples"], np.mean(lossPet, axis=1), yerr=np.std(lossPet, axis=1), label="lossPet")
-plt.errorbar(res["nsamples"], np.mean(lossT1c, axis=1), yerr=np.std(lossT1c, axis=1),   label="lossT1c")
-plt.errorbar(res["nsamples"], np.mean(lossFlair, axis=1), yerr=np.std(lossFlair, axis=1),   label="lossFlair")
-plt.errorbar(res["nsamples"], np.mean(combinedLoss, axis=1), yerr=np.std(combinedLoss, axis=1),   label="combinedLoss")
-plt.ylabel("loss")
-plt.xlabel("number of samples")
-plt.legend()
-#%%
-plt.figure(figsize=(12, 7))	
-
-plt.plot(res["nsamples"], res["sigmas"])
-plt.ylabel("sigma")
-plt.xlabel("number of samples")
 
 # %%
 res.keys()
