@@ -1,8 +1,9 @@
-from TumorGrowthToolkit.FK import Solver as fwdSolver
+from TumorGrowthToolkit.FK_DTI import FK_DTI_Solver as fwdSolver
 import cmaes
 import numpy as np
 import nibabel as nib
 import time
+
         
 def dice(a, b):
     boolA, boolB = a > 0, b > 0 
@@ -12,59 +13,57 @@ def dice(a, b):
     return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
 
 class CmaesSolver():
-    def __init__(self,  settings, wm, gm, edema, enhancing, pet, necrotic):
+    def __init__(self, settings, csf, diffusionTensors, edema, enhancing, necrotic):
         self.settings = settings
-        self.wm = wm
-        self.gm = gm
         self.edema = edema
         self.enhancing = enhancing
-        self.pet = pet
         self.necrotic = necrotic
+        self.csf = csf
+        self.diffusionTensors = diffusionTensors
 
 
     def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
 
-        lambdaFlair = 0.333
-        lambdaT1c = 0.333
-        lambdaPET = 0.333
+        lambdaFlair = self.settings["lossLambdaFlair"]
+        lambdaT1c = self.settings["lossLambdaT1"]
 
-        petInsideTumorRegion = self.pet * np.logical_or(self.edema, self.enhancing)
-        if np.sum(petInsideTumorRegion) == 0:
-            lossPet = 1
-        else:   
-            lossPet = 1 - np.corrcoef(tumor.copy().flatten(), petInsideTumorRegion.copy().flatten() )[0,1]
-        
         proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
         lossFlair = 1 - dice(proposedEdema, self.edema)
         lossT1c = 1 - dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
-        loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c + lambdaPET * lossPet
+        loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c 
 
         #catch none values
         if not loss<=1:
             loss = 1
 
-        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c, "lossPet":lossPet, "lossTotal":loss}
-
+        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c,  "lossTotal":loss}
 
     def forward(self, x, resolution_factor =1.0):
-
+        values = []
+        for key in self.fullVariableList:
+            if key in self.settings["fixedParameters"]:
+                values.append(self.settings[key])
+            else:
+                values.append(x[self.variableList.index(key)])
+        
         parameters = {
-            'Dw': x[4],         # Diffusion coefficient for white matter
-            'rho': x[3],        # Proliferation rate
-            'RatioDw_Dg': 10,   # Ratio of diffusion coefficients in white and grey matter
-            'gm': self.wm,      # Grey matter data
-            'wm': self.gm,      # White matter data
-            'NxT1_pct': x[0],   # initial focal position (in percentages)
-            'NyT1_pct': x[1],
-            'NzT1_pct': x[2],
+            'Dw': values[self.fullVariableList.index("Dw")],         # Diffusion coefficient for white matter
+            'rho': values[self.fullVariableList.index("Dw")],        # Proliferation rate
+            "diffusionEllipsoidScaling": values[self.fullVariableList.index("diffusionEllipsoidScaling")],
+            "diffusionTensorExponent": values[self.fullVariableList.index("diffusionTensorExponent")],
+            'NxT1_pct': values[self.fullVariableList.index("NxT1_pct")], 
+            'NyT1_pct': values[self.fullVariableList.index("NyT1_pct")],
+            'NzT1_pct': values[self.fullVariableList.index("NzT1_pct")],
+            'diffusionTensors': self.diffusionTensors,
             'resolution_factor':resolution_factor
         }
         print("run: ", x)
         solver = fwdSolver(parameters)
-        return solver.solve()["final_state"]
+        tumor = solver.solve()["final_state"]
 
 
     def getLoss(self, x, gen):
+        #print('Debug get Loss')
 
         start_time = time.time()
 
@@ -79,11 +78,38 @@ class CmaesSolver():
             resolution_factor = self.settings["resolution_factor"]
         else:
             raise ValueError("resolution_factor has to be float or dict")
+
+
+        values = []
+        for key in self.fullVariableList:
+            if key in self.settings["fixedParameters"]:
+                values.append(self.settings[key])
+            else:
+                values.append(x[self.variableList.index(key)])
         
-        tumor = self.forward(x[:-2], resolution_factor)
+        parameters = {
+            'Dw': values[self.fullVariableList.index("Dw")],         # Diffusion coefficient for white matter
+            'rho': values[self.fullVariableList.index("Dw")],        # Proliferation rate
+            "diffusionEllipsoidScaling": values[self.fullVariableList.index("diffusionEllipsoidScaling")],
+            "diffusionTensorExponent": values[self.fullVariableList.index("diffusionTensorExponent")],
+            'NxT1_pct': values[self.fullVariableList.index("NxT1_pct")], 
+            'NyT1_pct': values[self.fullVariableList.index("NyT1_pct")],
+            'NzT1_pct': values[self.fullVariableList.index("NzT1_pct")],
+            'diffusionTensors': self.diffusionTensors,
+            'resolution_factor':resolution_factor
+        }
+        print("run: ", x)
+        #print('Debug start sovler')
+        solver = fwdSolver(parameters)
+
         
-        thresholdT1c = x[-2]	
-        thresholdFlair = x[-1]
+        #print('Debug start solve run')
+        tumor = solver.solve()["final_state"]
+
+        #print('Debug end solve run')
+        
+        thresholdT1c = values[self.fullVariableList.index("thresholdT1c")]	
+        thresholdFlair = values[self.fullVariableList.index("thresholdFlair")]
         loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
         end_time = time.time()
 
@@ -97,10 +123,22 @@ class CmaesSolver():
 
     def run(self):
         start = time.time()
-        
-        initValues = (self.settings["NxT1_pct0"], self.settings["NyT1_pct0"], self.settings["NzT1_pct0"], self.settings["dw0"], self.settings["rho0"], self.settings["thresholdT1c"], self.settings["thresholdFlair"])
 
-        trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange= self.settings["parameterRanges"])
+        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair"]
+
+        self.variableList, self.fixedList = [], []
+        for key in self.fullVariableList:
+            if key in self.settings["fixedParameters"]:
+                self.fixedList.append(key)
+            else:
+                self.variableList.append(key)
+
+        initValues, parameterRanges = [], []
+        for key in self.variableList:
+            initValues.append(self.settings[key])
+            parameterRanges.append(self.settings[key + "_range"])
+
+        trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange=parameterRanges)
 
         #trace = np.array(trace)
         nsamples, y0s, xs0s, sigmas, Cs, pss, pcs, Cmus, C1s, xmeans, lossDir = [], [], [], [], [], [], [], [], [], [], []
@@ -117,19 +155,42 @@ class CmaesSolver():
             xmeans.append(element[9])
             lossDir.append(element[10])
 
-        
         minLoss = 1
         for i in range(len(lossDir)):
             for j in range(len(lossDir[i])):
                 if lossDir[i][j]["lossTotal"] <= minLoss:
                     minLoss = lossDir[i][j]["lossTotal"]
                     opt = lossDir[i][j]["allParams"]
+        
+        # forward run with optimal parameters
+        values = []
+        for key in self.fullVariableList:
+            if key in self.settings["fixedParameters"]:
+                values.append(self.settings[key])
+            else:
+                values.append(opt[self.variableList.index(key)])
+        
+        parameters = {
+            'Dw': values[self.fullVariableList.index("Dw")],         # Diffusion coefficient for white matter
+            'rho': values[self.fullVariableList.index("Dw")],        # Proliferation rate
+            "diffusionEllipsoidScaling": values[self.fullVariableList.index("diffusionEllipsoidScaling")],
+            "diffusionTensorExponent": values[self.fullVariableList.index("diffusionTensorExponent")],
+            'NxT1_pct': values[self.fullVariableList.index("NxT1_pct")], 
+            'NyT1_pct': values[self.fullVariableList.index("NyT1_pct")],
+            'NzT1_pct': values[self.fullVariableList.index("NzT1_pct")],
+            'diffusionTensors': self.diffusionTensors,
+            'resolution_factor':1
+        }
+        
+        solver = fwdSolver(parameters)
+        tumor = solver.solve()["final_state"]
 
-        tumor = self.forward(opt)
         end = time.time()
 
         resultDict = {}
 
+        resultDict["fixedParameters"] = self.fixedList
+        resultDict["variableParameters"] = self.variableList
         resultDict["nsamples"] = nsamples
         resultDict["y0s"] = y0s
         resultDict["xs0s"] = xs0s

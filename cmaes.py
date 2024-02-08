@@ -3,7 +3,10 @@ import scipy.special
 import numpy as np
 import math
 import random
-import multiprocessing
+#import multiprocessing
+import torch.multiprocessing as mp
+
+mp.set_sharing_strategy('file_system')
 
 try:
     import scipy.special
@@ -15,7 +18,9 @@ except ImportError:
     np = None
 
 
-def cmaes(fun, x0, sigma, g_max, trace=False, workers=0, parameterRange=None):
+def cmaes(fun, parameter, sigma, g_max, trace, workers, parameterRange):
+    mp.set_sharing_strategy('file_system')
+    #mp.set_start_method('spawn')
     """CMA-ES optimization
 
         Parameters
@@ -46,13 +51,29 @@ def cmaes(fun, x0, sigma, g_max, trace=False, workers=0, parameterRange=None):
         return [
             math.fsum(w * a[i] for w, a in zip(weights, A)) for i in range(N)
         ]
+    def standardize(parameter, parameterRanges):
+        newParameter = []
+        for i in range(len(parameter)):
+            length = parameterRanges[i][1] - parameterRanges[i][0]
+            newParameter.append((parameter[i] - parameterRanges[i][0]) / length)
+        return newParameter
+    
+    def invertStandardize(parameter, parameterRanges):
+        newParameter = []
+        for i in range(len(parameter)):
+            length = parameterRanges[i][1] - parameterRanges[i][0]
+            newParameter.append(parameter[i] * length + parameterRanges[i][0])
+        return newParameter
+
 
     if scipy == None:
         raise ModuleNotFoundError("cmaes needs scipy")
     if np == None:
         raise ModuleNotFoundError("cmaes needs nump")
     if workers == -1:
-        workers = multiprocessing.cpu_count()-8
+        workers = mp.cpu_count()-8
+
+    x0 = standardize(parameter, parameterRange)
     xmean, N = x0[:], len(x0)
     lambd = 4 + int(3 * math.log(N))
     mu = lambd // 2
@@ -76,16 +97,16 @@ def cmaes(fun, x0, sigma, g_max, trace=False, workers=0, parameterRange=None):
         x1 = [sqrtC @ e for e in x0]
         xs = [xmean + sigma * e for e in x1]
 
-        if parameterRange:
-            for j in range(len(xs)):
-                for i in range(len(xs[j])):
-                    xs[j][i] = np.clip(xs[j][i], parameterRange[i][0], parameterRange[i][1])
+        for j in range(len(xs)):
+            for i in range(len(xs[j])):
+                xs[j][i] = np.clip(xs[j][i], 0, 1)
 
         if workers == 0:
-            list = [fun(e, gen) for e in xs]
+            list = [fun(invertStandardize(e, parameterRange), gen) for e in xs]
+
         else:
-            with multiprocessing.Pool(workers) as pool:
-                list = pool.starmap(fun, [(x, gen) for x in xs])
+            with mp.Pool(workers) as pool:
+                list = pool.starmap(fun, [(invertStandardize(x, parameterRange), gen) for x in xs])
                 #list = pool.map(fun, xs, gen)
 
         ys = [x[0] for x in list]
@@ -108,5 +129,10 @@ def cmaes(fun, x0, sigma, g_max, trace=False, workers=0, parameterRange=None):
         if trace:
             Trace.append(
                 (gen * lambd, ys[0], xs[0], sigma, C, ps, pc, Cmu, C1, xmean, lossDir))
+    if workers > 0:
+        pool.terminate()
+        pool.close()
+        pool.join()
+
     return Trace if trace else xmean
 

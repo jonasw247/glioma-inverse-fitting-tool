@@ -136,7 +136,7 @@ if False: # if  __name__ == '__main__':
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
 
 #respond
-if __name__ == '__main__':
+if False # __name__ == '__main__':
     for patientID in range(120,130):
         try:
             # save the parameters and the tumor
