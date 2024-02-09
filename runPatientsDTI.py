@@ -53,8 +53,8 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, csf, brainmask, re
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     #TODO
-    settings["resolution_factor"] = 0.1#{ 0: 0.5, 0.3:0.6, 0.8: 0.8, 0.9: 1.0}
-    settings["generations"] =  1#int(1000 /9) +1 # there are 9 samples in each step
+    settings["resolution_factor"] = { 0: 0.5, 0.3:0.6, 0.8: 0.8, 0.9: 1.0}
+    settings["generations"] =  int(1000 /9) +1 # there are 9 samples in each step
 
     solver = cmaesDTI.CmaesSolver(settings, csf, diffusionTensors, edema, enhancing, necrotic)
     resultTumor, resultDict = solver.run()
