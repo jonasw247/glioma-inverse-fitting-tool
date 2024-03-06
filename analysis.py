@@ -45,11 +45,22 @@ res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_ne
 
 res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results/016OldLoss/gen_112_results.npy", allow_pickle=True).item()
 
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_9NewStandard/016/gen_25_results.npy", allow_pickle=True).item()
+#original michal FK
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results_NoPet/051/gen_112_results.npy", allow_pickle=True).item()
+
+#new FK with fixed thresholds
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_13FK_FixedThresholds/051/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_11initLargerho/051/gen_112_results.npy", allow_pickle=True).item()
 
 
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_14FixedCSF/051/gen_112_results.npy", allow_pickle=True).item()
 # %%
 res.keys()
+res["lossDir"][-1][0]
+#res["variableParameters"]
+#res["opt_params"]
+#%%
 res["variableParameters"]
 #%%
 np.array(res["Cs"])[-1]
