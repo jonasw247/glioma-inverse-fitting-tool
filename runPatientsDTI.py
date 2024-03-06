@@ -12,18 +12,18 @@ import tools
 from scipy.ndimage import binary_dilation
         
 #%%
-def run(edema, necrotic, enhancing, affine, diffusionTensors, csf, brainmask, resultpath):
-    #%%
+def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath):
+    
     settings = {}
     # fixed parameters that are not varied
     #TODO
     settings["fixedParameters"] = ["thresholdT1c",
-                                    "thresholdFlair", "diffusionTensorExponent"]#,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"]
+                                    "thresholdFlair", "diffusionTensorExponent"]#,"diffusionEllipsoidScaling"]#,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"]
 
     # init parameter
     settings["rho"] = 3.0
     settings["Dw"] = 0.15
-    settings["diffusionEllipsoidScaling"] = 10
+    settings["diffusionEllipsoidScaling"] = 10.0 #TODO
     settings["diffusionTensorExponent"] = 1.0
     settings["thresholdT1c"] = 0.9
     settings["thresholdFlair"] = 0.25
@@ -46,7 +46,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, csf, brainmask, re
     settings["diffusionTensorExponent_range"] = [0.1, 10.0]
 
     # algorithm settings
-    settings["workers"] =9 #9# 1#9 #9#4 # 9
+    settings["workers"] =0 #9# 1#9 #9#4 # 9
     settings["sigma0"] = 0.06
     settings["lossLambdaT1"] = 0.2
     settings["lossLambdaFlair"] = 0.8
@@ -56,7 +56,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, csf, brainmask, re
     settings["resolution_factor"] = { 0: 0.5, 0.3:0.6, 0.8: 0.8, 0.9: 1.0}
     settings["generations"] =  int(1000 /9) +1 # there are 9 samples in each step
 
-    solver = cmaesDTI.CmaesSolver(settings, csf, diffusionTensors, edema, enhancing, necrotic)
+    solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic)
     resultTumor, resultDict = solver.run()
 
     # save results
@@ -105,7 +105,7 @@ if False: #__name__ == '__main__':
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
         resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/18_data/resultsP" + ("0000" + str(patientID))[-3:] + "/"
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
-
+#%%
 #tgm
 if  __name__ == '__main__':
 
@@ -123,7 +123,7 @@ if  __name__ == '__main__':
             segmentation = segm.get_fdata()
             affine = segm.affine
 
-            brainTissue = nib.load(dataPath + "tgm/tgm" +  ("0000" + str(patientID))[-3:] +"/preop/sub-tgm"+("0000" + str(patientID))[-3:]+"_ses-preop_space-sri_tissuemask.nii.gz")
+            brainTissue = nib.load(dataPath + "tgm/tgm" +  ("0000" + str(patientID))[-3:] +"/preop/sub-tgm"+("0000" + str(patientID))[-3:]+"_ses-preop_space-sri_tissuemask.nii.gz").get_fdata()
 
             brainmask = nib.load(dataPath + "tgm/tgm" +  ("0000" + str(patientID))[-3:] +"/preop/sub-tgm"+("0000" + str(patientID))[-3:]+"_ses-preop_space-sri_brainmask.nii.gz").get_fdata()
 
@@ -133,10 +133,23 @@ if  __name__ == '__main__':
             print("patient not found ", patientID)
             continue
 
-        
-        csf = binary_dilation(brainTissue == 1, iterations = 1)
+        CSFMask = binary_dilation(brainTissue == 1, iterations = 1)
 
-        diffusionTensors[csf] = 0
+
+        #TODO for FK run
+        #white matter
+        #diffusionTensors[brainTissue == 3] = 10.0
+        #gray matter
+        #diffusionTensors[brainTissue == 2] = 1.0
+
+
+        diffusionTensors[CSFMask] = 0
+
+
+        #plt.imshow((diffusionTensors/np.max(diffusionTensors))[:,:,70,:,1])
+        #plt.show()
+        #plt.imshow(CSFMask[:,:,70])
+
 
         # different labels then other datasets
         edema = np.logical_or(segmentation == 3, segmentation == 2)
@@ -144,13 +157,11 @@ if  __name__ == '__main__':
         enhancing = segmentation == 4
 
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_12initLargerhoandExponent/" + ("0000" + str(patientID))[-3:] + "/"
-
+        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_16shouldWork/" + ("0000" + str(patientID))[-3:] + "/"
         #TODO
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_testing/" + ("0000" + str(patientID))[-3:] + "/"
+        #resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_testing/" + ("0000" + str(patientID))[-3:] + "/"
 
-        #TODO
-        run(edema, necrotic, enhancing, affine, diffusionTensors, csf, brainmask, resultpath)
+        run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath)
 
 #respond old!!
 if False: # __name__ == '__main__':
@@ -201,3 +212,4 @@ if False: # __name__ == '__main__':
         datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
         resultpath = '/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/' + str(patientNumber) + 'newSettings/'
         run(edema, necrotic, enhancing, affine, pet, WM, GM, resultpath)
+# %%
