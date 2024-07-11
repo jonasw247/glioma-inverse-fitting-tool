@@ -55,6 +55,8 @@ res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_11
 
 
 res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_14FixedCSF/051/gen_112_results.npy", allow_pickle=True).item()
+
+res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_DTI_results_testing/BraTS2021_016/gen_4_results.npy", allow_pickle=True).item()
 # %%
 res.keys()
 res["lossDir"][-1][0]
