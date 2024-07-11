@@ -20,6 +20,7 @@ class CmaesSolver():
         self.necrotic = necrotic
         self.diffusionTensors = diffusionTensors
 
+        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
 
     def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
 
@@ -72,7 +73,9 @@ class CmaesSolver():
             'NyT1_pct': values[self.fullVariableList.index("NyT1_pct")],
             'NzT1_pct': values[self.fullVariableList.index("NzT1_pct")],
             'diffusionTensors': self.diffusionTensors,
-            'resolution_factor':resolution_factor
+            'resolution_factor':resolution_factor,
+            'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
+            'stopping_time': values[self.fullVariableList.index("stopping_time")]
         }
         print("run: ", x)
         #print('Debug start sovler')
@@ -80,7 +83,8 @@ class CmaesSolver():
 
         
         #print('Debug start solve run')
-        tumor = solver.solve()["final_state"]
+        results = solver.solve()
+        tumor = results["final_state"]
 
         #print('Debug end solve run')
         
@@ -91,7 +95,16 @@ class CmaesSolver():
 
         lossDir["time"] = end_time - start_time
         lossDir["allParams"] = x
+        input_parameters = parameters.copy()
+        del input_parameters['diffusionTensors']
+        lossDir["input_parameters"] = input_parameters
         lossDir["resolution_factor"] = resolution_factor
+
+        del results["initial_state"]
+        del results["final_state"]
+        if results["time_series"] is not None:
+            del results["time_series"]
+        lossDir["results"] = results
                 
         print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
 
@@ -99,8 +112,6 @@ class CmaesSolver():
 
     def run(self):
         start = time.time()
-
-        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair"]
 
         self.variableList, self.fixedList = [], []
         for key in self.fullVariableList:
@@ -155,7 +166,9 @@ class CmaesSolver():
             'NyT1_pct': values[self.fullVariableList.index("NyT1_pct")],
             'NzT1_pct': values[self.fullVariableList.index("NzT1_pct")],
             'diffusionTensors': self.diffusionTensors,
-            'resolution_factor':1.0
+            'resolution_factor':1,
+            'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
+            'stopping_time': values[self.fullVariableList.index("stopping_time")]
         }
         
         solver = fwdSolver(parameters)
