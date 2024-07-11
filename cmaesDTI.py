@@ -66,7 +66,7 @@ class CmaesSolver():
         
         parameters = {
             'Dw': values[self.fullVariableList.index("Dw")],         # Diffusion coefficient for white matter
-            'rho': values[self.fullVariableList.index("Dw")],        # Proliferation rate
+            'rho': values[self.fullVariableList.index("rho")],        # Proliferation rate
             "diffusionEllipsoidScaling": values[self.fullVariableList.index("diffusionEllipsoidScaling")],
             "diffusionTensorExponent": values[self.fullVariableList.index("diffusionTensorExponent")],
             'NxT1_pct': values[self.fullVariableList.index("NxT1_pct")], 
@@ -159,7 +159,7 @@ class CmaesSolver():
         
         parameters = {
             'Dw': values[self.fullVariableList.index("Dw")],         # Diffusion coefficient for white matter
-            'rho': values[self.fullVariableList.index("Dw")],        # Proliferation rate
+            'rho': values[self.fullVariableList.index("rho")],        # Proliferation rate
             "diffusionEllipsoidScaling": values[self.fullVariableList.index("diffusionEllipsoidScaling")],
             "diffusionTensorExponent": values[self.fullVariableList.index("diffusionTensorExponent")],
             'NxT1_pct': values[self.fullVariableList.index("NxT1_pct")], 
