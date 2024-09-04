@@ -7,68 +7,42 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_50_results.npy"
+path= "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_10_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_50_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_10_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_150_results.npy"
+path ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_200_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_016/gen_150_results.npy"
+path =  "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_070/gen_125_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_115/gen_5_results.npy"
 
-'''
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-02_05_02_gen_20/results.npy", allow_pickle=True).item()
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_115/gen_5_results.npy"
 
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/results/2023_12_07-13_28_47_gen_20/results.npy", allow_pickle=True).item()
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_115/gen_5_results.npy"
 
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_13-23_12_33_gen_10/results.npy", allow_pickle=True).item()
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_13-22_19_32_gen_20/results.npy", allow_pickle=True).item()
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_01/BraTS2021_101/gen_125_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_01/BraTS2021_101/gen_125_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_02/BraTS2021_155/gen_50_results.npy"
 
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_02/BraTS2021_115/gen_3_results.npy"
 
-res=np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-19_59_24_gen_50/results.npy", allow_pickle=True).item()
-
-#good one 
-res= np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_14-20_32_11_gen_200/results.npy", allow_pickle=True).item()
-
-#largeTest full res
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-06_42_07_gen_1250/results.npy", allow_pickle=True).item()
-
-#res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_15-10_52_25_gen_20/results.npy", allow_pickle=True).item()
-
-# test with resolution increase in the very end 
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-00_16_39_gen_187/results.npy", allow_pickle=True).item()
-
-# test with resolution increase in steps
-res = np.load("/home/jonas/workspace/programs/cmaesForPhythonFWD/resultsP001/2023_12_17-01_13_20_gen_187/results.npy", allow_pickle=True).item()
-'''
-#Respond
-#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/003/gen_112_results.npy", allow_pickle=True).item()
-
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results_newSettings2/003/gen_112_results.npy", allow_pickle=True).item()
-
-#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/121newSettings/gen_112_results.npy", allow_pickle=True).item()
-#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/ReSPOND/cma-es_results/120newSettings/gen_112_results.npy", allow_pickle=True).item()
-
-#res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results/051/gen_112_results.npy", allow_pickle=True).item()
-
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results/016OldLoss/gen_112_results.npy", allow_pickle=True).item()
-
-#original michal FK
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_results_NoPet/051/gen_112_results.npy", allow_pickle=True).item()
-
-#new FK with fixed thresholds
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_13FK_FixedThresholds/051/gen_112_results.npy", allow_pickle=True).item()
-
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_11initLargerho/051/gen_112_results.npy", allow_pickle=True).item()
+res = np.load(path, allow_pickle=True).item()
 
 
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_14FixedCSF/051/gen_112_results.npy", allow_pickle=True).item()
 
-res = np.load("/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_DTI_results_testing/BraTS2021_016/gen_4_results.npy", allow_pickle=True).item()
-# %%
+
 res.keys()
 res["lossDir"][-1][0]
 #res["variableParameters"]
 #res["opt_params"]
-#%%
+
 res["variableParameters"]
-#%%
+
 np.array(res["Cs"])[-1]
 
 
-#%%
+
 lossDir = res["lossDir"]
 minLoss = 1
 for i in range(len(lossDir)):
@@ -124,7 +98,7 @@ times = np.array(times )/60
 xs = np.array(xs)
 lossCombined = 0.5 * np.array(lossFlair) + 0.5 * np.array(lossT1c)
 
-#%%
+
 plt.figure(figsize=(12, 7))	
 
 
@@ -136,6 +110,30 @@ plt.ylabel("loss")
 plt.xlabel("number of samples")
 plt.legend()
 #%%
+# Plotting min-max band for lossT1c
+plt.fill_between(res["nsamples"], np.min(lossT1c, axis=1), np.max(lossT1c, axis=1), alpha=0.2, label="lossT1c Band")
+plt.plot(res["nsamples"], np.mean(lossT1c, axis=1), label="lossT1c Mean")
+
+# Plotting min-max band for lossFlair
+plt.fill_between(res["nsamples"], np.min(lossFlair, axis=1), np.max(lossFlair, axis=1), alpha=0.2, label="lossFlair Band")
+plt.plot(res["nsamples"], np.mean(lossFlair, axis=1), label="lossFlair Mean")
+
+# Plotting min-max band for lossCombined
+plt.fill_between(res["nsamples"], np.min(lossCombined, axis=1), np.max(lossCombined, axis=1), alpha=0.2, label="combinedLoss Band")
+plt.plot(res["nsamples"], np.mean(lossCombined, axis=1), label="combinedLoss Mean")
+
+# Plotting min-max band for totalLoss
+plt.fill_between(res["nsamples"], np.min(totalLoss, axis=1), np.max(totalLoss, axis=1), alpha=0.2, label="totalLoss Band")
+plt.plot(res["nsamples"], np.mean(totalLoss, axis=1), label="totalLoss Mean")
+
+# Labels and legend
+plt.ylabel("Loss")
+plt.xlabel("Number of Samples")
+plt.legend()
+
+# Display the plot
+plt.show()
+#%%
 plt.figure(figsize=(12, 7))	
 
 plt.plot(res["nsamples"], res["sigmas"])
@@ -144,7 +142,7 @@ plt.xlabel("number of samples")
 
 #%%
 def plotValues(values, yLab, title):
-    plt.figure(figsize=(12, 7))	
+    plt.figure(figsize=(7, 4))	
     for i in range(len((values))):
         plt.scatter([res["nsamples"][i]]*len(values[i]), values[i], color="tab:blue", marker=".")
     plt.ylabel(yLab)
@@ -154,13 +152,11 @@ def plotValues(values, yLab, title):
 
 title = "Samples: " + np.max(res["nsamples"]).astype(str) + " - cumulative time: " + str(np.round(np.sum(times), 2)) + " - parallel time: " + str(np.round(res["time_min"], 1)) + "min"
 plotValues(times, "time [min]", title)
-#%%
+
 plotValues(resfactor, "resolution_factor", title)
 
 #%%
-
-#%%
-for i in range(10):
+for i in range(12):
     plotValues(xs[:,:,i], res["variableParameters"][i], title)
 #%%
 plt.figure(figsize=(12, 7))	

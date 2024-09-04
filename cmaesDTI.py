@@ -3,8 +3,10 @@ import cmaes
 import numpy as np
 import nibabel as nib
 import time
+import wandb 
+import matplotlib.pyplot as plt
+from scipy import ndimage
 
-        
 def dice(a, b):
     boolA, boolB = a > 0, b > 0 
     if np.sum(boolA) + np.sum(boolB) == 0:
@@ -13,14 +15,42 @@ def dice(a, b):
     return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
 
 class CmaesSolver():
-    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic):
+    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic, doLog = True):
+
+        self.doLog = doLog
+
         self.settings = settings
         self.edema = edema
         self.enhancing = enhancing
         self.necrotic = necrotic
         self.diffusionTensors = diffusionTensors
 
+        self.init_scale = 1.0
+
         self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
+    
+    def logImges(self, tumor):
+        com = ndimage.center_of_mass(tumor)
+        try:
+            z = int(com[2])
+        except:
+            z = 0
+            print("Error in center of mass, using z=0, tumor  all zeros")
+        brainmask = np.sum(np.sum(self.diffusionTensors, axis=-1),axis=-1) 
+        tissue = brainmask*0.2 +self.edema *0.3 + self.enhancing * 0.6 + self.necrotic * 0.8
+        
+        from matplotlib.colors import LinearSegmentedColormap
+        colors = ["#FBB760", "#F00F0F"]  # RGB values for orange and red
+        n_bins = 100  # Number of bins for the color map
+        cmap_name = 'orange_red'
+        cmap = LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins)
+        plt.imshow(tissue[:,:,z],alpha=0.5, cmap='gray')
+        plt.imshow(tumor[:,:,z], alpha=0.5*(tumor[:,:,z]>0.01), cmap = cmap, vmin=0, vmax=1)	
+
+        #plt.title('Tumor')
+        #plt.colorbar()
+        
+        wandb.log({"tumor": wandb.Image(plt)})
 
     def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
 
@@ -28,15 +58,17 @@ class CmaesSolver():
         lambdaT1c = self.settings["lossLambdaT1"]
 
         proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
-        lossFlair = 1 - dice(proposedEdema, self.edema)
-        lossT1c = 1 - dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
+        diceFlair = dice(proposedEdema, self.edema)
+        diceT1c = dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
+        lossFlair = 1 - diceFlair
+        lossT1c = 1 - diceT1c
         loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c 
 
         #catch none values
         if not loss<=1:
             loss = 1
 
-        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c,  "lossTotal":loss}
+        return loss, {"lossFlair":lossFlair ,"lossT1c": lossT1c,  "lossTotal":loss, "diceFlair":diceFlair, "diceT1c":diceT1c}
 
 
     def getLoss(self, x, gen):
@@ -75,38 +107,57 @@ class CmaesSolver():
             'diffusionTensors': self.diffusionTensors,
             'resolution_factor':resolution_factor,
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
-            'stopping_time': values[self.fullVariableList.index("stopping_time")]
+            'stopping_time': values[self.fullVariableList.index("stopping_time")],
+            'init_scale': self.init_scale,
+            'verbose': True
         }
-        print("run: ", x)
+        #print("run: ", x)
         #print('Debug start sovler')
         solver = fwdSolver(parameters)
 
+        input_parameters = parameters.copy()
+        del input_parameters['diffusionTensors']
+        print("-------------------")
+        print("input_parameters: ", input_parameters)
+        print("-------------------")
         
         #print('Debug start solve run')
         results = solver.solve()
-        tumor = results["final_state"]
+        if results["success"] == True:
 
-        #print('Debug end solve run')
-        
-        thresholdT1c = values[self.fullVariableList.index("thresholdT1c")]	
-        thresholdFlair = values[self.fullVariableList.index("thresholdFlair")]
-        loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
+            tumor = results["final_state"]
+
+            if self.doLog:
+                self.logImges(tumor)
+
+            thresholdT1c = values[self.fullVariableList.index("thresholdT1c")]	
+            thresholdFlair = values[self.fullVariableList.index("thresholdFlair")]
+            loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
+        else:
+            loss = 1
+            lossDir = {"lossFlair":1 ,"lossT1c": 1,  "lossTotal":1, "diceFlair":0, "diceT1c":0}
+
         end_time = time.time()
 
         lossDir["time"] = end_time - start_time
         lossDir["allParams"] = x
-        input_parameters = parameters.copy()
-        del input_parameters['diffusionTensors']
         lossDir["input_parameters"] = input_parameters
         lossDir["resolution_factor"] = resolution_factor
 
-        del results["initial_state"]
-        del results["final_state"]
-        if results["time_series"] is not None:
-            del results["time_series"]
-        lossDir["results"] = results
+        if results["success"] == True:
+            del results["initial_state"]
+            del results["final_state"]
+            try:
+                del results["time_series"]
+            except:
+                print("no time series")
                 
-        print("loss: ", loss, "lossDir: ", lossDir, "x: ", x)
+        lossDir["results"] = results
+  
+        print( "lossDir: ", lossDir)
+    
+        if self.doLog:
+            wandb.log(lossDir)
 
         return loss, lossDir
 
@@ -124,6 +175,10 @@ class CmaesSolver():
         for key in self.variableList:
             initValues.append(self.settings[key])
             parameterRanges.append(self.settings[key + "_range"])
+
+        if self.doLog:
+            wandb.init(project="evolutionary_sampling")
+            wandb.config.update(self.settings)
 
         trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange=parameterRanges)
 
@@ -168,7 +223,8 @@ class CmaesSolver():
             'diffusionTensors': self.diffusionTensors,
             'resolution_factor':1,
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
-            'stopping_time': values[self.fullVariableList.index("stopping_time")]
+            'stopping_time': values[self.fullVariableList.index("stopping_time")],
+            'init_scale': self.init_scale
         }
         
         solver = fwdSolver(parameters)
