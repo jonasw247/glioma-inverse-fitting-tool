@@ -123,6 +123,8 @@ class CmaesSolver():
         
         #print('Debug start solve run')
         results = solver.solve()
+        thresholdT1c = values[self.fullVariableList.index("thresholdT1c")]	
+        thresholdFlair = values[self.fullVariableList.index("thresholdFlair")]
         if results["success"] == True:
 
             tumor = results["final_state"]
@@ -130,8 +132,7 @@ class CmaesSolver():
             if self.doLog:
                 self.logImges(tumor)
 
-            thresholdT1c = values[self.fullVariableList.index("thresholdT1c")]	
-            thresholdFlair = values[self.fullVariableList.index("thresholdFlair")]
+
             loss, lossDir = self.lossfunction(tumor, thresholdT1c, thresholdFlair)
         else:
             loss = 1
@@ -151,8 +152,10 @@ class CmaesSolver():
                 del results["time_series"]
             except:
                 print("no time series")
-                
+
         lossDir["results"] = results
+        lossDir["thresholdT1c"] = thresholdT1c
+        lossDir["thresholdFlair"] = thresholdFlair
   
         print( "lossDir: ", lossDir)
     
@@ -252,5 +255,10 @@ class CmaesSolver():
         resultDict["opt_params"] = opt
         resultDict["time_min"] = (end - start) / 60
         resultDict["settings"] = self.settings
+
+        if self.doLog:
+            wandb.log(resultDict)
+
+            wandb.finish()
         
         return tumor, resultDict

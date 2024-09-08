@@ -25,22 +25,21 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     
     settings = {}
     # fixed parameters that are not varied
-    #TODO
     # only optimize origin, rho and final volume for now
-    settings["fixedParameters"] = ["Dw", "diffusionEllipsoidScaling", "diffusionTensorExponent",  "stopping_time", "thresholdT1c", "thresholdFlair" ]#,,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"],
+    settings["fixedParameters"] = ["Dw", "diffusionEllipsoidScaling", "diffusionTensorExponent",  "stopping_time",  "thresholdT1c", "thresholdFlair"]#,,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
 
     # init parameter
     settings["rho"] = 0.8
     settings["Dw"] = 1.0
     settings["diffusionEllipsoidScaling"] = 1
     settings["diffusionTensorExponent"] = 1
-    settings["thresholdT1c"] = 0.9
-    settings["thresholdFlair"] = 0.5
+    settings["thresholdT1c"] = 0.66
+    settings["thresholdFlair"] = 0.33
     settings["stopping_volume"] = 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))
     settings["stopping_time"] = 10000000
 
     # center of mass
-    com = ndimage.center_of_mass(edema)
+    com = ndimage.center_of_mass(necrotic + enhancing)
     settings["NxT1_pct"] = float(com[0] / np.shape(edema)[0])
     settings["NyT1_pct"] = float(com[1] / np.shape(edema)[1])
     settings["NzT1_pct"] = float(com[2] / np.shape(edema)[2])
@@ -55,24 +54,39 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["NzT1_pct_range"] = [0,1]
     settings["diffusionEllipsoidScaling_range"] = [0.1, 100.0]
     settings["diffusionTensorExponent_range"] = [0.1, 10.0]
-    settings["stopping_volume_range"] = [100, np.sum(brainmask)]
+    settings["stopping_volume_range"] = [100, np.sum(brainmask) /2]
     settings["stopping_time_range"] = [0, 1000000000]
 
     # algorithm settings
-    settings["workers"] = 0#9#0 #9# 1#9 #9#4 # 9
-    settings["sigma0"] = 0.01
-    settings["lossLambdaT1"] = 0.5 #0.2
-    settings["lossLambdaFlair"] = 0.5 # 0.8
+    settings["workers"] = 0# 9#9#0#9#0 #9# 1#9 #9#4 # 9
+    settings["sigma0"] = 0.02
+    weighLossByVolume = True
+    settings["weighLossByVolume"] = weighLossByVolume
+    if weighLossByVolume:
+        volumeCore = np.sum(necrotic) + np.sum(enhancing)
+        volumeEdema = np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)
+        totalVolume = volumeCore + volumeEdema
+        relVolumeCore = volumeCore/ totalVolume
+        relVolumeEdema = 1 - relVolumeCore
+        print("relVolumeCore", relVolumeCore)
+        settings["lossLambdaT1"] = relVolumeCore
+        settings["lossLambdaFlair"] = relVolumeEdema
+        print("rel core volume:", relVolumeCore, "rel edema volume:", relVolumeEdema)
+    else:
+        settings["lossLambdaT1"] = 0.5 #0.2
+        settings["lossLambdaFlair"] = 0.5 # 0.8
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
-    settings["resolution_factor"] = { 0: 0.5, 0.6: 0.6, 0.7:0.7, 0.85:0.85, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
-    settings["generations"] = 30 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
+    settings["resolution_factor"] = 0.5 # { 0: 0.5, 0.6: 0.6, 0.7:0.7, 0.85:0.85, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
+    settings["generations"] = 25 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
 
     solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic)
     resultTumor, resultDict = solver.run()
 
     # save results
-    os.makedirs(resultpath, exist_ok=True)
+    resPathFolder = resultpath# os.path.join(resultpath.split("/")[0:-1])
+    os.makedirs(resPathFolder, exist_ok=True)
+
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_settings.npy", settings)
     np.save(resultpath + "gen_"+ str(settings["generations"]) + "_results.npy", resultDict)
     nibImg = nib.Nifti1Image(resultTumor, affine)
@@ -81,7 +95,8 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     tools.writeNii(resultTumor, path = resultpath+"gen_"+ str(settings["generations"]) +"_result.nii.gz", affine = affine)
     
     del solver, resultTumor, resultDict, nibImg
-    print("Done For This Patient")
+    print("DTI done for this Patient")
+    gc.collect()
 
 #%%
 def process_patient(patientID):
@@ -105,9 +120,20 @@ def process_patient(patientID):
         print(f"patient {patientID} not found: {e}")
         return
 
+    wm = brainTissue == 3
+    gm = brainTissue == 2
+
+    #exclude CSF
     CSFMask = brainTissue == 1
+    # include tumor segmentation region
     CSFMask[segmentation > 0] = 0
     diffusionTensors[CSFMask] = 0
+
+    #exclude CSF 
+    wm[CSFMask] = 0
+    gm[CSFMask] = 0
+    gm[np.logical_and(CSFMask, segmentation>0)] = True
+    
     brainmask = brainTissue > 0
 
     edema = np.logical_or(segmentation == 3, segmentation == 2)
@@ -118,7 +144,7 @@ def process_patient(patientID):
         print("Too small tumor for patient", patientID)
         return
 
-    resultpath = f"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_02/BraTS2021_{('0000' + str(patientID))[-3:]}/"
+    resultpath = f"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_07LowResExp/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
 
     run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath)
 
@@ -126,11 +152,17 @@ def process_patient(patientID):
     del segm, segmentation, brainTissue, diffusionTensorsLower, diffusionTensors
     gc.collect()
 if __name__ == '__main__':
-    process_patient(115)
+    for i in range(0, 160):
+        try:
+            process_patient(i)
+        except Exception as e:
+            print(f"Error processing patient {i}: {e}")
+
+
 
 #%%
 
-if False: #__name__ == '__main__':
+if False:# __name__ == '__main__':
     if len(sys.argv) > 1:
         patientID = sys.argv[1]
         process_patient(patientID)
