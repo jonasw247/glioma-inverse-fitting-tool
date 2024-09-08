@@ -17,13 +17,20 @@ import subprocess
 import sys
 from multiprocessing import Pool, cpu_count
 
-doLog = True
+doLog = False
 
         
 #%%
-def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath):
+def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm):
     
     settings = {}
+
+    settings["runNormalFKInsteadOfDTI"] = True #TODO check
+    if settings["runNormalFKInsteadOfDTI"]:
+        print("Attention -----------------")
+        print("running normal FK")
+        print("Attention -----------------")
+
     # fixed parameters that are not varied
     # only optimize origin, rho and final volume for now
     settings["fixedParameters"] = ["Dw", "diffusionEllipsoidScaling", "diffusionTensorExponent",  "stopping_time",  "thresholdT1c", "thresholdFlair"]#,,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
@@ -58,7 +65,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["stopping_time_range"] = [0, 1000000000]
 
     # algorithm settings
-    settings["workers"] = 0# 9#9#0#9#0 #9# 1#9 #9#4 # 9
+    settings["workers"] = 9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
     settings["sigma0"] = 0.02
     weighLossByVolume = True
     settings["weighLossByVolume"] = weighLossByVolume
@@ -78,9 +85,9 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] = 0.5 # { 0: 0.5, 0.6: 0.6, 0.7:0.7, 0.85:0.85, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
-    settings["generations"] = 25 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
+    settings["generations"] = 200 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
 
-    solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic)
+    solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic, gm, wm)
     resultTumor, resultDict = solver.run()
 
     # save results
@@ -133,7 +140,7 @@ def process_patient(patientID):
     wm[CSFMask] = 0
     gm[CSFMask] = 0
     gm[np.logical_and(CSFMask, segmentation>0)] = True
-    
+
     brainmask = brainTissue > 0
 
     edema = np.logical_or(segmentation == 3, segmentation == 2)
@@ -144,14 +151,17 @@ def process_patient(patientID):
         print("Too small tumor for patient", patientID)
         return
 
-    resultpath = f"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_07LowResExp/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
+    expName = "09_testFK"
+    resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_"+expName+f"/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
 
-    run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath)
+    run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm)
 
     # Explicit cleanup
     del segm, segmentation, brainTissue, diffusionTensorsLower, diffusionTensors
     gc.collect()
 if __name__ == '__main__':
+    #process_patient(115) #TODO
+
     for i in range(0, 160):
         try:
             process_patient(i)

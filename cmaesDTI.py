@@ -1,4 +1,5 @@
-from TumorGrowthToolkit.FK_DTI import FK_DTI_Solver as fwdSolver
+from TumorGrowthToolkit.FK_DTI import FK_DTI_Solver as fwdSolverDTI
+from TumorGrowthToolkit.FK import Solver as fwdSolverFK
 import cmaes
 import numpy as np
 import nibabel as nib
@@ -15,7 +16,7 @@ def dice(a, b):
     return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
 
 class CmaesSolver():
-    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic, doLog = True):
+    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic, gm = None, wm=None, doLog = True):
 
         self.doLog = doLog
 
@@ -26,6 +27,10 @@ class CmaesSolver():
         self.diffusionTensors = diffusionTensors
 
         self.init_scale = 1.0
+
+        if gm is not None and wm is not None:
+            self.gm = gm
+            self.wm = wm
 
         self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
     
@@ -49,8 +54,8 @@ class CmaesSolver():
 
         #plt.title('Tumor')
         #plt.colorbar()
-        
-        wandb.log({"tumor": wandb.Image(plt)})
+        if self.doLog:
+            wandb.log({"tumor": wandb.Image(plt)})
 
     def lossfunction(self, tumor, thresholdT1c, thresholdFlair):
 
@@ -111,6 +116,17 @@ class CmaesSolver():
             'init_scale': self.init_scale,
             'verbose': True
         }
+
+        if self.settings["runNormalFKInsteadOfDTI"]:
+            parameters["diffusionTensors"] = None
+            parameters["difffusionEllipsoidScaling"] = None
+            parameters["diffusionTensorExponent"] = None
+            parameters["gm"] = self.gm
+            parameters["wm"] = self.wm
+            fwdSolver = fwdSolverFK
+        else:
+            fwdSolver = fwdSolverDTI
+
         #print("run: ", x)
         #print('Debug start sovler')
         solver = fwdSolver(parameters)
@@ -230,6 +246,16 @@ class CmaesSolver():
             'init_scale': self.init_scale
         }
         
+        # ugly... but works	
+        if self.settings["runNormalFKInsteadOfDTI"]:
+            parameters["diffusionTensors"] = None
+            parameters["difffusionEllipsoidScaling"] = None
+            parameters["diffusionTensorExponent"] = None
+            parameters["gm"] = self.gm
+            parameters["wm"] = self.wm
+            fwdSolver = fwdSolverFK
+        else:
+            fwdSolver = fwdSolverDTI
         solver = fwdSolver(parameters)
         tumor = solver.solve()["final_state"]
         del solver
