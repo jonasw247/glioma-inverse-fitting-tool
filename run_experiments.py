@@ -12,11 +12,11 @@ def process_patient(patientID):
         print(f"Error for patient {patientID}: {result.stderr}")
 
 if __name__ == '__main__':
-    patients =np.arange(0, 180, 1) #  [115]#
+    patients =np.arange(116, 500, 1) # 180  [115]#
     print(patients)
     
     # Determine the number of worker processes to use
-    num_workers = 10
+    num_workers = 10 #10
 
     # Create a pool of worker processes
     with Pool(processes=num_workers) as pool:

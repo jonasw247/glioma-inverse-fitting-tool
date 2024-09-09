@@ -27,6 +27,20 @@ path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_
 
 path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_02/BraTS2021_115/gen_3_results.npy"
 
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_02/BraTS2021_00115/sub-BraTS2021_00115_ses-preop_space-sri_gen_21_results.npy"
+
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_100_results.npy"
+
+#16
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/BraTS2021_00016/sub-BraTS2021_00016_ses-preop_space-sri_gen_101_results.npy"
+
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_10_testDTI/BraTS2021_00016/sub-BraTS2021_00016_ses-preop_space-sri_gen_101_results.npy"
+
+#14
+path ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_100_results.npy"
+
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_10_testDTI/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_102_results.npy"
+
 res = np.load(path, allow_pickle=True).item()
 
 

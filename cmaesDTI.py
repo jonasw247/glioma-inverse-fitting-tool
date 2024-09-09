@@ -33,6 +33,8 @@ class CmaesSolver():
             self.wm = wm
 
         self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
+
+        self.minLoss = np.inf
     
     def logImges(self, tumor):
         com = ndimage.center_of_mass(tumor)
@@ -133,9 +135,14 @@ class CmaesSolver():
 
         input_parameters = parameters.copy()
         del input_parameters['diffusionTensors']
+        if self.settings["runNormalFKInsteadOfDTI"]:
+            del input_parameters['gm']
+            del input_parameters['wm']
         print("-------------------")
         print("input_parameters: ", input_parameters)
         print("-------------------")
+        if self.doLog:
+            wandb.log({"input_parameters": input_parameters})
         
         #print('Debug start solve run')
         results = solver.solve()
@@ -178,6 +185,15 @@ class CmaesSolver():
         if self.doLog:
             wandb.log(lossDir)
 
+
+        if loss < self.minLoss:
+            self.minLoss = loss
+            self.opt = x
+            self.opt_lossDir = lossDir
+
+            #TODO self.saveResults()
+
+
         return loss, lossDir
 
     def run(self):
@@ -199,7 +215,7 @@ class CmaesSolver():
             wandb.init(project="evolutionary_sampling")
             wandb.config.update(self.settings)
 
-        trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange=parameterRanges)
+        trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange=parameterRanges, doLog=self.doLog)
 
         #trace = np.array(trace)
         nsamples, y0s, xs0s, sigmas, Cs, pss, pcs, Cmus, C1s, xmeans, lossDir = [], [], [], [], [], [], [], [], [], [], []

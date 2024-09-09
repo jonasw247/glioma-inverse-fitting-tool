@@ -5,6 +5,7 @@ import math
 import random
 #import multiprocessing
 import torch.multiprocessing as mp
+import wandb
 
 mp.set_sharing_strategy('file_system')
 
@@ -18,7 +19,7 @@ except ImportError:
     np = None
 
 
-def cmaes(fun, parameter, sigma, g_max, trace, workers, parameterRange):
+def cmaes(fun, parameter, sigma, g_max, trace, workers, parameterRange, doLog = False):
     mp.set_sharing_strategy('file_system')
     #mp.set_start_method('spawn')
     """CMA-ES optimization
@@ -127,6 +128,8 @@ def cmaes(fun, parameter, sigma, g_max, trace, workers, parameterRange):
             C1 = np.outer(pc, pc)
             C = (1 - c1 - cmu) * C + c1 * (C1 + cc * (2 - cc) * C) + cmu * Cmu
         if trace:
+            if doLog:
+                wandb.log({"loss": ys[0], "sigma": sigma, "C": C, "ps": ps, "pc": pc, "Cmu": Cmu, "C1": C1, "xmean": xmean})
             Trace.append(
                 (gen * lambd, ys[0], xs[0], sigma, C, ps, pc, Cmu, C1, xmean, lossDir))
     if workers > 0:

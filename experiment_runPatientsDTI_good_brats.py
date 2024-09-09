@@ -17,7 +17,7 @@ import subprocess
 import sys
 from multiprocessing import Pool, cpu_count
 
-doLog = False
+doLog = True
 
         
 #%%
@@ -25,7 +25,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     
     settings = {}
 
-    settings["runNormalFKInsteadOfDTI"] = True #TODO check
+    settings["runNormalFKInsteadOfDTI"] = False #TODO check
     if settings["runNormalFKInsteadOfDTI"]:
         print("Attention -----------------")
         print("running normal FK")
@@ -61,11 +61,11 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["NzT1_pct_range"] = [0,1]
     settings["diffusionEllipsoidScaling_range"] = [0.1, 100.0]
     settings["diffusionTensorExponent_range"] = [0.1, 10.0]
-    settings["stopping_volume_range"] = [100, np.sum(brainmask) /2]
+    settings["stopping_volume_range"] = [0.1 * (np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)), np.sum(brainmask) /2]
     settings["stopping_time_range"] = [0, 1000000000]
 
     # algorithm settings
-    settings["workers"] = 9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
+    settings["workers"] = 0#9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
     settings["sigma0"] = 0.02
     weighLossByVolume = True
     settings["weighLossByVolume"] = weighLossByVolume
@@ -85,7 +85,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] = 0.5 # { 0: 0.5, 0.6: 0.6, 0.7:0.7, 0.85:0.85, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
-    settings["generations"] = 200 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
+    settings["generations"] = 102 #101 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
 
     solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic, gm, wm)
     resultTumor, resultDict = solver.run()
@@ -132,13 +132,14 @@ def process_patient(patientID):
 
     #exclude CSF
     CSFMask = brainTissue == 1
-    # include tumor segmentation region
-    CSFMask[segmentation > 0] = 0
-    diffusionTensors[CSFMask] = 0
+    # include tumor segmentation region,
+    mask = CSFMask.copy()
+    mask[segmentation > 0] = 0
+    diffusionTensors[mask] = 0
 
     #exclude CSF 
-    wm[CSFMask] = 0
-    gm[CSFMask] = 0
+    wm[mask] = 0
+    gm[mask] = 0
     gm[np.logical_and(CSFMask, segmentation>0)] = True
 
     brainmask = brainTissue > 0
@@ -151,7 +152,7 @@ def process_patient(patientID):
         print("Too small tumor for patient", patientID)
         return
 
-    expName = "09_testFK"
+    expName = "10_testDTI"#"09_testFK"#
     resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_"+expName+f"/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
 
     run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm)
@@ -159,10 +160,11 @@ def process_patient(patientID):
     # Explicit cleanup
     del segm, segmentation, brainTissue, diffusionTensorsLower, diffusionTensors
     gc.collect()
-if __name__ == '__main__':
-    #process_patient(115) #TODO
+if False: #__name__ == '__main__':
+    process_patient(16) #TODO
 
-    for i in range(0, 160):
+    for i in range(14, 160):
+        break # TODO
         try:
             process_patient(i)
         except Exception as e:
@@ -172,7 +174,7 @@ if __name__ == '__main__':
 
 #%%
 
-if False:# __name__ == '__main__':
+if True:# __name__ == '__main__':
     if len(sys.argv) > 1:
         patientID = sys.argv[1]
         process_patient(patientID)

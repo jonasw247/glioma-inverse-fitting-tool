@@ -1,14 +1,11 @@
 #%%
 import TumorGrowthToolkit.FK_DTI.tools as toolsDTI
-from TumorGrowthToolkit.FK_DTI import FK_DTI_Solver
+from TumorGrowthToolkit.FK import Solver as Fk_Solver
 import nibabel as nib
 import numpy as np
 import matplotlib.pyplot as plt
 
-#this set of parameters is not working but takes forever to run	
-global_parameters_dir = {'Dw': 1.0, 'rho': 0.01, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 1, 'NxT1_pct': 0.41032485842150356, 'NyT1_pct': 0.682107039709935, 'NzT1_pct': 0.6776180829555788, 'resolution_factor': 0.5, 'stopping_volume': 113813.51104931717, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True} #resulution was 0.5 'NxT1_pct': 0.21032485842150356,
-
-
+global_parameters_dir =  {'Dw': 1.0, 'rho': 0.738079774347954, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': None, 'NxT1_pct': 0.670669460722168, 'NyT1_pct': 0.42367631804786604, 'NzT1_pct': 0.0003538186519991361, 'resolution_factor': 0.5, 'stopping_volume': 48049.131682033956, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'difffusionEllipsoidScaling': None}
 
 def process_patient(patientID):
 
@@ -31,21 +28,37 @@ def process_patient(patientID):
         print(f"patient {patientID} not found: {e}")
         return
 
-    CSFMask = brainTissue == 1
-    CSFMask[segmentation > 0] = 0
-    diffusionTensors[CSFMask] = 0
+    
     brainmask = brainTissue > 0
 
     edema = np.logical_or(segmentation == 3, segmentation == 2)
     necrotic = segmentation == 1
     enhancing = segmentation == 4
 
+
+    wm = brainTissue == 3
+    gm = brainTissue == 2
+
+    #exclude CSF
+    CSFMask = brainTissue == 1
+    # include tumor segmentation region,
+    mask = CSFMask.copy()
+    mask[segmentation > 0] = 0
+    diffusionTensors[mask] = 0
+
+    #exclude CSF 
+    wm[mask] = 0
+    gm[mask] = 0
+    gm[np.logical_and(CSFMask, segmentation>0)] = True
+
     if np.sum(edema) + np.sum(necrotic) + np.sum(enhancing) < 25 or np.sum(edema) < 25:
         print("Too small tumor for patient", patientID)
         return
 
     global_parameters_dir["diffusionTensors"] = diffusionTensors
-    fK_DTI_Solver = FK_DTI_Solver(global_parameters_dir)
+    global_parameters_dir["wm"] = wm
+    global_parameters_dir["gm"] = gm
+    solver = Fk_Solver(global_parameters_dir)
 
     #plot start
     brainmask = np.sum(np.sum(diffusionTensors, axis=-1),axis=-1) 
@@ -58,7 +71,7 @@ def process_patient(patientID):
     plt.scatter(y,x, c='r')
     plt.title("Tumor Origin")
     plt.show()
-    result = fK_DTI_Solver.solve(doPlot=True)
+    result = solver.solve()
     print(result)
 
 
