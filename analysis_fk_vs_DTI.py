@@ -16,39 +16,25 @@ patsDTI, patsFK, fks, dtis = [], [], [], []
 for pat in range(14, 300):
     patstring = f"BraTS2021_{str(pat).zfill(5)}"
 
-    if os.path.exists(fkPath + patstring) or os.path.exists(dtiPath + patstring):
-        if os.path.exists(dtiPath + patstring):
-            dirs = os.listdir(dtiPath + patstring)
-            for d in dirs:
-                if "100_results.npy" in d or "101_results.npy" in d or "102_results.npy" in d:
-                    dtis.append(np.load(f"{dtiPath}{patstring}/{d}", allow_pickle=True).item())
-                    patsDTI.append(pat)               
+    if os.path.exists(dtiPath + patstring):
+        dirs = os.listdir(dtiPath + patstring)
+        for d in dirs:
+            if "100_results.npy" in d or "101_results.npy" in d or "102_results.npy" in d:
+                dtis.append(np.load(f"{dtiPath}{patstring}/{d}", allow_pickle=True).item())
+                patsDTI.append(pat)               
 
 
-        if os.path.exists(fkPath + patstring):
-            dirs = os.listdir(fkPath + patstring)
-            for d in dirs:
-                if "100_results.npy" in d or "101_results.npy" in d or "102_results.npy" in d:
-                    fks.append(np.load(f"{fkPath}{patstring}/{d}", allow_pickle=True).item())
-                    patsFK.append(pat)
+    if os.path.exists(fkPath + patstring):
+        dirs = os.listdir(fkPath + patstring)
+        for d in dirs:
+            if "100_results.npy" in d or "101_results.npy" in d or "102_results.npy" in d:
+                fks.append(np.load(f"{fkPath}{patstring}/{d}", allow_pickle=True).item())
+                patsFK.append(pat)
+
+patsFK = np.array(patsFK).astype(str)
+patsDTI = np.array(patsDTI).astype(str)
        
 #%%
-getLossForListOfRuns(runs):
-    losses, diceFlairs, diceT1cs = [], [], []
-    for run in runs:
-        minLoss, opt, bestLossDir, diceFlair, diceT1c = getLossForListOFRuns(run)
-        losses.append(minLoss)
-        diceFlairs.append(diceFlair)
-        diceT1cs.append(diceT1c)
-        
-    return minLoss, opt, bestLossDir, diceFlair, diceT1c
-
-getRuntimeforListOfRuns(runs):
-    runtimes = []
-    for run in runs:
-        runtimes.append(run["time_min"])
-    return runtimes
-
 def getLossOfRun(res):
     lossDir = res["lossDir"]
     minLoss = 1
@@ -61,50 +47,55 @@ def getLossOfRun(res):
                 opt = lossDir[i][j]["allParams"]
                 bestLossDir = lossDir[i][j]
 
-    print("minLoss", minLoss)
-    print("opt", opt)
-    print("bestLossDir", bestLossDir)
     return minLoss, opt, bestLossDir, diceFlair, diceT1c
 
-lossDTIs, lossFKs, diceFlairDTIs, diceT1cDTIs, diceFlairFKs, diceT1cFKs, pats = [], [], [], [], [], [], []
+def getLossForListOfRuns(runs):
+    losses, diceFlairs, diceT1cs = [], [], []
+    for run in runs:
+        minLoss, opt, bestLossDir, diceFlair, diceT1c = getLossOfRun(run)
+        losses.append(minLoss)
+        diceFlairs.append(diceFlair)
+        diceT1cs.append(diceT1c)
+        
+    return losses,diceFlairs, diceT1cs 
 
-
-for pat in range(300):
-    if pat in patsDTI and pat in patsFK:
-        patWhere = patsDTI.index(pat)
-        lossDTI,_,_, diceFlair, diceT1c = getLossOfRun(dtis[patWhere])
-        lossDTIs.append(lossDTI)
-        diceFlairDTIs.append(diceFlair)
-        diceT1cDTIs.append(diceT1c)
-
-        patWhere = patsFK.index(pat)
-        lossFK,_,_, diceFlair, diceT1c = getLossOfRun(fks[patWhere])
-        lossFKs.append(lossFK)
-        diceFlairFKs.append(diceFlair)
-        diceT1cFKs.append(diceT1c)
-
-        pats.append(pat)
-    print(pat)
-pats = np.array(pats).astype(str)
+def getRuntimeforListOfRuns(runs):
+    runtimes = []
+    for run in runs:
+        runtimes.append(run["time_min"])
+    return runtimes
+#%%
+lossDTIs, diceFlairDTIs, diceT1cDTIs = getLossForListOfRuns(dtis)
+lossFKs, diceFlairFKs, diceT1cFKs = getLossForListOfRuns(fks)
 
 #%% weighted dice, loss
-plt.plot(pats, 1 - np.array(lossDTIs), label="DTI")
-plt.plot(pats, 1 - np.array(lossFKs), label="FK")
+plt.plot(patsDTI, 1 - np.array(lossDTIs), label="DTI")
+plt.plot(patsFK, 1 - np.array(lossFKs), label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Volume Weighted Dice")
 plt.legend()
 #%% plot dice flair
-plt.plot(pats, diceFlairDTIs, label="DTI")
-plt.plot(pats, diceFlairFKs, label="FK")
+plt.plot(patsDTI, diceFlairDTIs, label="DTI")
+plt.plot(patsFK, diceFlairFKs, label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Dice Flair")
 plt.legend()
 
 #%% plot dice T1c
-plt.plot(pats, diceT1cDTIs, label="DTI")
-plt.plot(pats, diceT1cFKs, label="FK")
+plt.plot(patsDTI, diceT1cDTIs, label="DTI")
+plt.plot(patsFK, diceT1cFKs, label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Dice T1c")
+plt.legend()
+
+#%%% plot runtime
+runtimeDTIs = getRuntimeforListOfRuns(dtis)
+runtimeFKs = getRuntimeforListOfRuns(fks)
+plt.plot(patsDTI, np.array(runtimeDTIs) / 60, label="DTI")
+plt.plot(patsFK, np.array(runtimeFKs) /60, label="FK")
+plt.xlabel("Patient")
+plt.ylabel("Runtime in hours")
+
 plt.legend()
 
 #%%
