@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 
 global_parameters_dir =  {'Dw': 1.0, 'rho': 0.738079774347954, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': None, 'NxT1_pct': 0.670669460722168, 'NyT1_pct': 0.42367631804786604, 'NzT1_pct': 0.0003538186519991361, 'resolution_factor': 0.5, 'stopping_volume': 48049.131682033956, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'difffusionEllipsoidScaling': None}
 
+global_parameters_dir = {'Dw': 1.0, 'rho': 10.0, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': None, 'NxT1_pct': 0.5828975569055244, 'NyT1_pct': 0.4397344617309852, 'NzT1_pct': 0.16969136432951953, 'resolution_factor': 0.5, 'stopping_volume': 55355.93922186011, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'difffusionEllipsoidScaling': None}
+
+global_parameters_dir = {'Dw': 1.0, 'rho': 5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': None, 'NxT1_pct': 0.6388018763342702, 'NyT1_pct': 0.7025559698303504, 'NzT1_pct': 0.3516943091717649, 'resolution_factor': 0.5, 'stopping_volume': 65086.167678080834, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'difffusionEllipsoidScaling': None}
+
+
 def process_patient(patientID):
 
     patString = ("000000" + str(patientID))[-5:]
@@ -73,6 +78,9 @@ def process_patient(patientID):
     plt.show()
     result = solver.solve()
     print(result)
+
+    #plot tumor
+    plt.imshow(result["final_state"][:,:,z])
 
 
 if __name__ == '__main__':

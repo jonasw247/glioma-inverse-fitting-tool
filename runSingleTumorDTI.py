@@ -12,6 +12,13 @@ global_parameters_dir =  {'Dw': 1.0, 'rho': 0.0551608257797072, 'diffusionEllips
 
 global_parameters_dit =  {'Dw': 1.0, 'rho': 0.738079774347954, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': None, 'NxT1_pct': 0.5470669460722168, 'NyT1_pct': 0.48367631804786604, 'NzT1_pct': 0.1538186519991361, 'resolution_factor': 0.5, 'stopping_volume': 48049.131682033956, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'difffusionEllipsoidScaling': None}
 
+
+{'Dw': 59.551555037015206, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 1, 'NxT1_pct': 0.35520135349515986, 'NyT1_pct': 0.7184248473917638, 'NzT1_pct': 0.3682253046477162, 'resolution_factor': 0.5, 'stopping_volume': 165057.71113718097, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True}
+
+
+{'Dw': 80.54207890889282, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.5293293089737141, 'NxT1_pct': 0.3035039321610199, 'NyT1_pct': 0.6903178541615499, 'NzT1_pct': 0.5131769722294754, 'resolution_factor': 0.5, 'stopping_volume': 99370.9174813795, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True}
+
+global_parameters_dit ={'Dw': 6.677491946210937, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9878505948960314, 'NxT1_pct': 0.6620214456801183, 'NyT1_pct': 0.43053226140594536, 'NzT1_pct': 0.23789204632233127, 'resolution_factor': 0.5, 'stopping_volume': 43775.12805199479, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True}
 def process_patient(patientID):
 
     patString = ("000000" + str(patientID))[-5:]

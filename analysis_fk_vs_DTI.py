@@ -4,10 +4,12 @@ import os
 import matplotlib.pyplot as plt
 
 
-fkPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/"
+fkPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_16_testFK/"#"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/" 
 
-dtiPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_10_testDTI/" 
+dtiPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_17_testDTIexponent/"#16_testDTI/"# "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_13_testDTI/"#
 
+
+#evolutionary_sampling18_testFK_butterfly
 fkPathRuns = os.listdir(fkPath)
 dtiPathRuns = os.listdir(dtiPath)
 
@@ -69,24 +71,26 @@ lossDTIs, diceFlairDTIs, diceT1cDTIs = getLossForListOfRuns(dtis)
 lossFKs, diceFlairFKs, diceT1cFKs = getLossForListOfRuns(fks)
 
 #%% weighted dice, loss
-plt.plot(patsDTI, 1 - np.array(lossDTIs), label="DTI")
-plt.plot(patsFK, 1 - np.array(lossFKs), label="FK")
+
+plt.scatter(patsDTI, 1 - np.array(lossDTIs), label="DTI")
+plt.scatter(patsFK, 1 - np.array(lossFKs), label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Volume Weighted Dice")
 plt.legend()
 #%% plot dice flair
-plt.plot(patsDTI, diceFlairDTIs, label="DTI")
-plt.plot(patsFK, diceFlairFKs, label="FK")
+plt.scatter(patsDTI, diceFlairDTIs, label="DTI")
+plt.scatter(patsFK, diceFlairFKs, label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Dice Flair")
 plt.legend()
 
 #%% plot dice T1c
-plt.plot(patsDTI, diceT1cDTIs, label="DTI")
-plt.plot(patsFK, diceT1cFKs, label="FK")
+plt.scatter(patsDTI, diceT1cDTIs, label="DTI")
+plt.scatter(patsFK, diceT1cFKs, label="FK")
 plt.xlabel("Patient")
 plt.ylabel("Dice T1c")
 plt.legend()
+
 
 #%%% plot runtime
 runtimeDTIs = getRuntimeforListOfRuns(dtis)
@@ -98,11 +102,33 @@ plt.ylabel("Runtime in hours")
 
 plt.legend()
 
-#%%
-len(pats), len(fks), len(dtis)
-#%%
-path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_100_results.npy"
 
-res = np.load(path, allow_pickle=True).item()
 
+# %%
+def getDiffs(pat1, res1, pat2, res2):
+    dicesDiff = []
+    for pat in range(0, 300):
+
+        if str(pat) in pat1 and str(pat) in pat2:
+            argwhere1 = np.argwhere(pat1 == str(pat))
+            argwhere2 = np.argwhere(pat2 == str(pat))
+            loss1 = res1[argwhere1[0][0]]
+            loss2 = res2[argwhere2[0][0]]
+            #print(pat)
+            #print(loss1, loss2)
+            diff = loss2 - loss1
+            #print(diff)
+            dicesDiff.append(diff)
+    return dicesDiff
+
+weigtedDiceDiff = getDiffs(patsFK, 1- np.array(lossFKs), patsDTI, 1-np.array(lossDTIs))
+print("mean dice weighted diff", np.mean(weigtedDiceDiff), "+-", np.std(weigtedDiceDiff)/np.sqrt(len(weigtedDiceDiff)) , ",    std dice diff", np.std(weigtedDiceDiff))
+
+flairDiceDiff = getDiffs(patsFK, diceFlairFKs, patsDTI, diceFlairDTIs)
+print("mean dice flair    diff", np.mean(flairDiceDiff), "+-", np.std(flairDiceDiff)/np.sqrt(len(flairDiceDiff)) , ",    std dice diff", np.std(flairDiceDiff))
+
+t1cDiceDiff = getDiffs(patsFK, diceT1cFKs, patsDTI, diceT1cDTIs)
+print("mean dice T1c      diff", np.mean(t1cDiceDiff), "+-", np.std(t1cDiceDiff)/np.sqrt(len(t1cDiceDiff)) , ",    std dice diff", np.std(t1cDiceDiff))
+
+plt.hist(weigtedDiceDiff, bins=5)
 # %%

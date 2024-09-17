@@ -16,9 +16,11 @@ def dice(a, b):
     return 2 * np.sum( np.logical_and(boolA, boolB)) / (np.sum(boolA) + np.sum(boolB))
 
 class CmaesSolver():
-    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic, gm = None, wm=None, doLog = True):
+    def __init__(self, settings, diffusionTensors, edema, enhancing, necrotic, gm = None, wm=None, doLog = True, logNameProject = "evolutionary_sampling", logNameRun = None):
 
         self.doLog = doLog
+        self.logNameProject = logNameProject
+        self.logNameRun = logNameRun
 
         self.settings = settings
         self.edema = edema
@@ -29,8 +31,8 @@ class CmaesSolver():
         self.init_scale = 1.0
 
         if gm is not None and wm is not None:
-            self.gm = gm
-            self.wm = wm
+            self.gm = gm * 1.0
+            self.wm = wm * 1.0
 
         self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
 
@@ -118,6 +120,7 @@ class CmaesSolver():
             'init_scale': self.init_scale,
             'verbose': True
         }
+
 
         if self.settings["runNormalFKInsteadOfDTI"]:
             parameters["diffusionTensors"] = None
@@ -212,7 +215,7 @@ class CmaesSolver():
             parameterRanges.append(self.settings[key + "_range"])
 
         if self.doLog:
-            wandb.init(project="evolutionary_sampling")
+            wandb.init(project=self.logNameProject, name=self.logNameRun)
             wandb.config.update(self.settings)
 
         trace = cmaes.cmaes(self.getLoss, initValues, self.settings["sigma0"], self.settings["generations"], workers=self.settings["workers"], trace=True, parameterRange=parameterRanges, doLog=self.doLog)

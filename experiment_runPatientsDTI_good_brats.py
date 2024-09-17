@@ -18,14 +18,21 @@ import sys
 from multiprocessing import Pool, cpu_count
 
 doLog = True
-
+experimentName = "18_testDTI"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
+debug = False # TODOCheck
+if debug:
+    experimentName += "debug"
+    doLog = False
         
 #%%
-def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm):
+def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm, runName = "run"):
     
     settings = {}
 
-    settings["runNormalFKInsteadOfDTI"] = False #TODO check
+    if "DTI" in experimentName:
+        settings["runNormalFKInsteadOfDTI"] = False 
+    else:
+        settings["runNormalFKInsteadOfDTI"] = True
     if settings["runNormalFKInsteadOfDTI"]:
         print("Attention -----------------")
         print("running normal FK")
@@ -33,11 +40,13 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # fixed parameters that are not varied
     # only optimize origin, rho and final volume for now
-    settings["fixedParameters"] = ["Dw", "diffusionEllipsoidScaling", "diffusionTensorExponent",  "stopping_time",  "thresholdT1c", "thresholdFlair"]#,,  "Dw","NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
+    settings["fixedParameters"] = [ "diffusionEllipsoidScaling",   "stopping_time",  "thresholdT1c", "thresholdFlair","rho"]#"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
 
     # init parameter
-    settings["rho"] = 0.8
-    settings["Dw"] = 1.0
+    settings["rho"] = 0.5 #0.5#0.1 # TODO
+    settings["Dw"] = 5.0
+    settings["RatioDw_Dg"] = 10
+
     settings["diffusionEllipsoidScaling"] = 1
     settings["diffusionTensorExponent"] = 1
     settings["thresholdT1c"] = 0.66
@@ -45,15 +54,18 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["stopping_volume"] = 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))
     settings["stopping_time"] = 10000000
 
+
     # center of mass
     com = ndimage.center_of_mass(necrotic + enhancing)
     settings["NxT1_pct"] = float(com[0] / np.shape(edema)[0])
     settings["NyT1_pct"] = float(com[1] / np.shape(edema)[1])
     settings["NzT1_pct"] = float(com[2] / np.shape(edema)[2])
 
+
     # set parameter ranges
     settings["rho_range"] = [0.01, 5.0]
-    settings["Dw_range"] = [0.001, 5.0]
+    settings["Dw_range"] = [0.001, 120.0] #TODO
+    settings["RatioDw_Dg_range"] = [0.1, 100.0]
     settings["thresholdT1c_range"] = [0.5, 0.9]
     settings["thresholdFlair_range"] = [0.01, 0.5]
     settings["NxT1_pct_range"] = [0,1]
@@ -64,9 +76,10 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["stopping_volume_range"] = [0.1 * (np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)), np.sum(brainmask) /2]
     settings["stopping_time_range"] = [0, 1000000000]
 
+
     # algorithm settings
-    settings["workers"] = 0#9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
-    settings["sigma0"] = 0.02
+    settings["workers"] =0 #9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
+    settings["sigma0"] = 0.02 # TODO
     weighLossByVolume = True
     settings["weighLossByVolume"] = weighLossByVolume
     if weighLossByVolume:
@@ -79,15 +92,18 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
         settings["lossLambdaT1"] = relVolumeCore
         settings["lossLambdaFlair"] = relVolumeEdema
         print("rel core volume:", relVolumeCore, "rel edema volume:", relVolumeEdema)
-    else:
-        settings["lossLambdaT1"] = 0.5 #0.2
-        settings["lossLambdaFlair"] = 0.5 # 0.8
+    else: #TODO
+        settings["lossLambdaT1"] = 0 #0.5 #0.2
+        settings["lossLambdaFlair"] = 1 #0.5 # 0.8
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
-    settings["resolution_factor"] = 0.5 # { 0: 0.5, 0.6: 0.6, 0.7:0.7, 0.85:0.85, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
+    settings["resolution_factor"] = 0.5#{ 0: 0.5, 0.7: 0.6, 0.8:0.7, 0.85:0.8, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
     settings["generations"] = 102 #101 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
+    if debug:
+        settings["generations"] = 40
+        resolution_factor = 0.5
 
-    solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic, gm, wm)
+    solver = cmaesDTI.CmaesSolver(settings, diffusionTensors, edema, enhancing, necrotic, gm, wm, logNameProject = "evolutionary_sampling" + experimentName, logNameRun = runName)
     resultTumor, resultDict = solver.run()
 
     # save results
@@ -152,15 +168,27 @@ def process_patient(patientID):
         print("Too small tumor for patient", patientID)
         return
 
-    expName = "10_testDTI"#"09_testFK"#
-    resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_"+expName+f"/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
+    resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_"+experimentName+f"/BraTS2021_{('0000000' + str(patientID))[-5:]}/sub-BraTS2021_{('0000000' + str(patientID))[-5:]}_ses-preop_space-sri_"
 
-    run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm)
+    run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath, gm, wm, runName = f"/BraTS2021_{('0000000' + str(patientID))[-5:]}")
 
     # Explicit cleanup
     del segm, segmentation, brainTissue, diffusionTensorsLower, diffusionTensors
     gc.collect()
-if False: #__name__ == '__main__':
+
+
+#%%
+
+if False:# __name__ == '__main__':
+    if len(sys.argv) > 1:
+        patientID = sys.argv[1]
+        process_patient(patientID)
+    else:
+        process_patient(14)
+
+
+
+if False: #True: #__name__ == '__main__':
     process_patient(16) #TODO
 
     for i in range(14, 160):
@@ -169,101 +197,17 @@ if False: #__name__ == '__main__':
             process_patient(i)
         except Exception as e:
             print(f"Error processing patient {i}: {e}")
-
-
-
 #%%
 
-if True:# __name__ == '__main__':
-    if len(sys.argv) > 1:
-        patientID = sys.argv[1]
-        process_patient(patientID)
-    else:
-        #NOT WORKING
-        patients =np.arange(0, 180, 1) #  [115]#
-        print(patients)
-        
-        # Determine the number of worker processes to use
-        num_workers = 2
-
-        #for patient in patients:
-        #    process_patient(patient)
-            
-        with Pool(processes=num_workers) as pool:
-            for patientID in patients:
-                pool.apply(process_patient, args=(patientID,))
-            
+def try_process_patient(patient):
     try:
-        
-        print("Done for patient", patientID)
+        process_patient(patient)
     except Exception as e:
-        print(f"Error processing patient {patientID}: {e}")
-#%%
+        print(f"Error processing patient {patient}: {e}")
 
-#%%
-if False:#__name__ == '__main__':
-    #patientID = sys.argv[1] # This is done  as the starting volume is somehow 0 for the second iteration in the loop
-    patients = np.arange(113, 400, 1)
-    print(patients)
-    for patientID in patients:
-        process_patient(patientID)
-        print("Done for patient", patientID)
-#%%
-if False:# __name__ == '__main__':
 
-    #patients = [51, 16,  31, 42,  1 , 2 ,3,4,5,6,7,8,9,10, 11, 12, 13] # 
-    patients = np.arange(80,400,1)
-    #patients = [16]
-    print(patients)
-    for patientID in patients:
-        patString = ("000000" + str(patientID))[-5:]
-        try:
-            segmPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/brats_good_t1_and_t1c_smoothed_and_masked/BraTS2021_"+patString+"/preop/sub-BraTS2021_"+patString+"_ses-preop_space-sri_seg.nii.gz"
-
-            dtiPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/brats_good_registerd_atlas/BraTS2021_"+patString+"/transformed_reoriented_tensor.nii.gz"
-            tissuePath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/brats_good_registerd_atlas/BraTS2021_"+patString+"/transformed_tissue.nii.gz"
-
-            segm = nib.load(segmPath)
-            segmentation = segm.get_fdata()
-            affine = segm.affine
-
-            brainTissue = nib.load(tissuePath).get_fdata()
-            diffusionTensorsLower = nib.load(dtiPath).get_fdata()[:,:,:,0,:]
-            diffusionTensors = toolsDTI.get_tensor_from_lower6(diffusionTensorsLower)
-
-            print("found data for patient" , patientID)
+if True:
+    #patientList = [238, 250, 246, 263, 364]
+    with Pool(5) as p:
+        p.map(try_process_patient, range(14, 300))
         
-
-        except:
-            print("patient not found ", patientID)
-
-            continue
-
-        #CSFMask = binary_dilation(brainTissue == 1, iterations = 1)
-        CSFMask = brainTissue == 1
-        CSFMask[segmentation >0] = 0
-
-        diffusionTensors[CSFMask] = 0
-
-        brainmask = brainTissue >0
-
-
-        """plt.imshow((diffusionTensors/np.max(diffusionTensors))[:,:,70,:,1])
-        plt.show()
-        plt.imshow(CSFMask[:,:,70])"""
-
-        # different labels then other datasets
-        edema = np.logical_or(segmentation == 3, segmentation == 2)
-        necrotic = segmentation == 1
-        enhancing = segmentation == 4
-
-        datetime = time.strftime("%Y_%m_%d-%H_%M_%S")
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_run01/BraTS2021_" + ("0000" + str(patientID))[-3:] + "/"
-
-        resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_DTI_results_testing/BraTS2021_" + ("0000" + str(patientID))[-3:] + "/"
-        #TODO
-        #resultpath = "/mnt/8tb_slot8/jonas/workingDirDatasets/tgm/cma-es_DTI_results_testing/" + ("0000" + str(patientID))[-3:] + "/"
-
-        run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultpath)
-        gc.collect()
-# %%

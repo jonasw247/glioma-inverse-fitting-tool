@@ -39,7 +39,10 @@ path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_resu
 #14
 path ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_09_testFK/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_100_results.npy"
 
-path = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_10_testDTI/BraTS2021_00014/sub-BraTS2021_00014_ses-preop_space-sri_gen_102_results.npy"
+path = "/mnt/8tb_slot8/jonas/workingDirDatasets/mich_rec/result_CMAES_v6differentLikelihoods_loss-dice_prior-0_5_nSamples-600_priorInit-True_factorSTD-13_5/rec013_pre/results.npy"
+
+
+
 
 res = np.load(path, allow_pickle=True).item()
 
