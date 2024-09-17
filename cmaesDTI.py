@@ -34,7 +34,7 @@ class CmaesSolver():
             self.gm = gm * 1.0
             self.wm = wm * 1.0
 
-        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time"]
+        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time", "RatioDw_Dg"]
 
         self.minLoss = np.inf
     
@@ -118,7 +118,11 @@ class CmaesSolver():
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
             'stopping_time': values[self.fullVariableList.index("stopping_time")],
             'init_scale': self.init_scale,
-            'verbose': True
+            'verbose': True,
+            "use_homogen_gm" : self.settings["use_homogen_gm"],
+            'gm' : self.gm,
+            'wm' : self.wm,
+            "RatioDw_Dg" : values[self.fullVariableList.index("RatioDw_Dg")]
         }
 
 
@@ -138,7 +142,7 @@ class CmaesSolver():
 
         input_parameters = parameters.copy()
         del input_parameters['diffusionTensors']
-        if self.settings["runNormalFKInsteadOfDTI"]:
+        if self.settings["runNormalFKInsteadOfDTI"] or self.settings["use_homogen_gm"]:
             del input_parameters['gm']
             del input_parameters['wm']
         print("-------------------")
@@ -262,7 +266,8 @@ class CmaesSolver():
             'resolution_factor':1,
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
             'stopping_time': values[self.fullVariableList.index("stopping_time")],
-            'init_scale': self.init_scale
+            'init_scale': self.init_scale,
+            "use_homogen_gm" : self.settings["use_homogen_gm"]
         }
         
         # ugly... but works	

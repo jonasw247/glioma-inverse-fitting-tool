@@ -18,7 +18,7 @@ import sys
 from multiprocessing import Pool, cpu_count
 
 doLog = True
-experimentName = "18_testDTI"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
+experimentName = "19_testDTI_gmFix"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
 debug = False # TODOCheck
 if debug:
     experimentName += "debug"
@@ -40,18 +40,17 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # fixed parameters that are not varied
     # only optimize origin, rho and final volume for now
-    settings["fixedParameters"] = [ "diffusionEllipsoidScaling",   "stopping_time",  "thresholdT1c", "thresholdFlair","rho"]#"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
+    settings["fixedParameters"] = [ "diffusionEllipsoidScaling",   "stopping_time",  "thresholdT1c", "thresholdFlair","rho", "RatioDw_Dg"]#"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
 
     # init parameter
     settings["rho"] = 0.5 #0.5#0.1 # TODO
-    settings["Dw"] = 5.0
-    settings["RatioDw_Dg"] = 10
-
+    settings["Dw"] = 40 # 5.0 #TODO
+    settings["RatioDw_Dg"] = 10.0
     settings["diffusionEllipsoidScaling"] = 1
     settings["diffusionTensorExponent"] = 1
     settings["thresholdT1c"] = 0.66
     settings["thresholdFlair"] = 0.33
-    settings["stopping_volume"] = 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))
+    settings["stopping_volume"] = 50000# TODO 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))
     settings["stopping_time"] = 10000000
 
 
@@ -65,23 +64,25 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     # set parameter ranges
     settings["rho_range"] = [0.01, 5.0]
     settings["Dw_range"] = [0.001, 120.0] #TODO
-    settings["RatioDw_Dg_range"] = [0.1, 100.0]
+    settings["RatioDw_Dg_range"] = [0.1, 100.0] # TODO
     settings["thresholdT1c_range"] = [0.5, 0.9]
     settings["thresholdFlair_range"] = [0.01, 0.5]
     settings["NxT1_pct_range"] = [0,1]
     settings["NyT1_pct_range"] = [0,1]
     settings["NzT1_pct_range"] = [0,1]
     settings["diffusionEllipsoidScaling_range"] = [0.1, 100.0]
-    settings["diffusionTensorExponent_range"] = [0.1, 10.0]
+    settings["diffusionTensorExponent_range"] = [0.01, 5.0]
     settings["stopping_volume_range"] = [0.1 * (np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)), np.sum(brainmask) /2]
     settings["stopping_time_range"] = [0, 1000000000]
 
 
     # algorithm settings
-    settings["workers"] =0 #9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
+    settings["workers"] =0#9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
     settings["sigma0"] = 0.02 # TODO
     weighLossByVolume = True
     settings["weighLossByVolume"] = weighLossByVolume
+    settings["use_homogen_gm"] =  True # TODO
+
     if weighLossByVolume:
         volumeCore = np.sum(necrotic) + np.sum(enhancing)
         volumeEdema = np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)
@@ -98,7 +99,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] = 0.5#{ 0: 0.5, 0.7: 0.6, 0.8:0.7, 0.85:0.8, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
-    settings["generations"] = 102 #101 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
+    settings["generations"] = 101 #101 #125#TODO int(1000 /9) +1 # there are 9 samples in each step
     if debug:
         settings["generations"] = 40
         resolution_factor = 0.5
@@ -198,15 +199,15 @@ if False: #True: #__name__ == '__main__':
         except Exception as e:
             print(f"Error processing patient {i}: {e}")
 #%%
-
-def try_process_patient(patient):
+def try_process_patient(patientID):
     try:
-        process_patient(patient)
+        process_patient(patientID)
     except Exception as e:
-        print(f"Error processing patient {patient}: {e}")
-
+        print(f"Error processing patient {patientID}: {e}")
 
 if True:
+
+
     #patientList = [238, 250, 246, 263, 364]
     with Pool(5) as p:
         p.map(try_process_patient, range(14, 300))
