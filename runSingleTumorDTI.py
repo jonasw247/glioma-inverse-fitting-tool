@@ -20,7 +20,7 @@ global_parameters_dit =  {'Dw': 1.0, 'rho': 0.738079774347954, 'diffusionEllipso
 
 global_parameters_dit ={'Dw': 6.677491946210937, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9878505948960314, 'NxT1_pct': 0.6620214456801183, 'NyT1_pct': 0.43053226140594536, 'NzT1_pct': 0.23789204632233127, 'resolution_factor': 0.5, 'stopping_volume': 43775.12805199479, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True}
 
-global_parameters_dir = {'Dw': 43.23043942916391, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.002, 'NxT1_pct': 0.6292156400394847, 'NyT1_pct': 0.48049674542355136, 'NzT1_pct': 0.1978914068624885, 'resolution_factor': 0.5, 'stopping_volume': 33834.691961566048, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'use_homogen_gm': True, 'RatioDw_Dg': 10.0}
+global_parameters_dir =  {'Dw': 36.97152615665277, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9980224392187599, 'NxT1_pct': 0.6528925812547761, 'NyT1_pct': 0.4476486277865444, 'NzT1_pct': 0.23492677481748653, 'resolution_factor': 0.5, 'stopping_volume': 27547.522715692678, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'use_homogen_gm': True, 'RatioDw_Dg': 10.500001}
 
 patientID = 14
 
@@ -37,6 +37,8 @@ try:
     brainTissue = nib.load(tissuePath).get_fdata()
     diffusionTensorsLower = nib.load(dtiPath).get_fdata()[:, :, :, 0, :]
     diffusionTensors = toolsDTI.get_tensor_from_lower6(diffusionTensorsLower)
+
+
 
     print("found data for patient", patientID)
 except Exception as e:
@@ -94,4 +96,17 @@ print(result)
 plt.imshow(tissue[:,:,z], cmap='gray', alpha=0.5)
 tumor = result["final_state"][:,:,z]
 plt.imshow(tumor, cmap='Reds' , alpha= tumor)
+# %%
+import numpy as np
+
+a = np.zeros((3,3,3))
+b = np.ones((3,3))
+b[0,0] = 0
+
+mask = b == 0
+
+a[mask] = 1
+
+# %%
+a
 # %%
