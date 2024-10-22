@@ -20,7 +20,7 @@ global_parameters_dit =  {'Dw': 1.0, 'rho': 0.738079774347954, 'diffusionEllipso
 
 global_parameters_dit ={'Dw': 6.677491946210937, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9878505948960314, 'NxT1_pct': 0.6620214456801183, 'NyT1_pct': 0.43053226140594536, 'NzT1_pct': 0.23789204632233127, 'resolution_factor': 0.5, 'stopping_volume': 43775.12805199479, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True}
 
-global_parameters_dir =  {'Dw': 36.97152615665277, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9980224392187599, 'NxT1_pct': 0.6528925812547761, 'NyT1_pct': 0.4476486277865444, 'NzT1_pct': 0.23492677481748653, 'resolution_factor': 0.5, 'stopping_volume': 27547.522715692678, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'use_homogen_gm': True, 'RatioDw_Dg': 10.500001}
+global_parameters_dir =  {'Dw': 36.97152615665277, 'rho': 0.5, 'diffusionEllipsoidScaling': 1, 'diffusionTensorExponent': 0.9980224392187599, 'NxT1_pct': 0.6528925812547761, 'NyT1_pct': 0.4476486277865444, 'NzT1_pct': 0.23492677481748653, 'resolution_factor': 0.5, 'stopping_volume': 27547.522715692678, 'stopping_time': 10000000, 'init_scale': 1.0, 'verbose': True, 'use_homogen_gm': True, 'RatioDw_Dg': 5.500001, "desiredSTD" : 0.3}
 
 patientID = 14
 
@@ -45,6 +45,14 @@ except Exception as e:
     print(f"patient {patientID} not found: {e}")
     
 
+#%%
+i,j = 1,0#0,1
+plt.imshow(diffusionTensors[:,:,75,j,i])
+plt.title(f"({j},{i})")
+plt.colorbar()
+plt.show()
+
+#%%
 CSFMask = brainTissue == 1
 CSFMask[segmentation > 0] = 0
 diffusionTensors[CSFMask] = 0

@@ -34,7 +34,7 @@ class CmaesSolver():
             self.gm = gm * 1.0
             self.wm = wm * 1.0
 
-        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time", "RatioDw_Dg"]
+        self.fullVariableList = ["NxT1_pct", "NyT1_pct", "NzT1_pct", "Dw", "rho","diffusionEllipsoidScaling","diffusionTensorExponent","thresholdT1c","thresholdFlair", "stopping_volume", "stopping_time", "RatioDw_Dg", "desiredSTD"]
 
         self.minLoss = np.inf
     
@@ -65,13 +65,20 @@ class CmaesSolver():
 
         lambdaFlair = self.settings["lossLambdaFlair"]
         lambdaT1c = self.settings["lossLambdaT1"]
+        viewLossAsProbability = self.settings.get("viewLossAsProbability", False)	
 
         proposedEdema = np.logical_and(tumor > thresholdFlair, tumor < thresholdT1c	)
         diceFlair = dice(proposedEdema, self.edema)
         diceT1c = dice(tumor > thresholdT1c, np.logical_or(self.necrotic, self.enhancing))
         lossFlair = 1 - diceFlair
         lossT1c = 1 - diceT1c
-        loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c 
+        
+        if viewLossAsProbability:
+            loss =  lossFlair * lossT1c
+
+        else:
+            loss = lambdaFlair * lossFlair + lambdaT1c * lossT1c 
+
 
         #catch none values
         if not loss<=1:
@@ -118,11 +125,12 @@ class CmaesSolver():
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
             'stopping_time': values[self.fullVariableList.index("stopping_time")],
             'init_scale': self.init_scale,
-            'verbose': True,
+            'verbose': False,
             "use_homogen_gm" : self.settings["use_homogen_gm"],
             'gm' : self.gm,
             'wm' : self.wm,
-            "RatioDw_Dg" : values[self.fullVariableList.index("RatioDw_Dg")]
+            "RatioDw_Dg" : values[self.fullVariableList.index("RatioDw_Dg")],
+            "desiredSTD" : values[self.fullVariableList.index("desiredSTD")]
         }
 
 
@@ -267,7 +275,11 @@ class CmaesSolver():
             'stopping_volume': values[self.fullVariableList.index("stopping_volume")],
             'stopping_time': values[self.fullVariableList.index("stopping_time")],
             'init_scale': self.init_scale,
-            "use_homogen_gm" : self.settings["use_homogen_gm"]
+            "use_homogen_gm" : self.settings["use_homogen_gm"],
+            'gm' : self.gm,
+            'wm' : self.wm,
+            "RatioDw_Dg" : values[self.fullVariableList.index("RatioDw_Dg")],
+            "desiredSTD" : values[self.fullVariableList.index("desiredSTD")]
         }
         
         # ugly... but works	

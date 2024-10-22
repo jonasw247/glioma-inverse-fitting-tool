@@ -18,7 +18,7 @@ import sys
 from multiprocessing import Pool, cpu_count
 
 doLog = True
-experimentName = "19_testDTI_gmFix"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
+experimentName ="28_testDTI_no_homo_gm"#"23_testDTI_new_STD_and_exp_butterfly"#"26_testDTI_fix_std"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
 debug = False # TODOCheck
 if debug:
     experimentName += "debug"
@@ -40,18 +40,23 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # fixed parameters that are not varied
     # only optimize origin, rho and final volume for now
-    settings["fixedParameters"] = [ "diffusionEllipsoidScaling",   "stopping_time",  "thresholdT1c", "thresholdFlair","rho", "RatioDw_Dg"]#"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
+    settings["fixedParameters"] = [   "stopping_time",  "thresholdT1c", "thresholdFlair",  "rho", "diffusionTensorExponent","diffusionEllipsoidScaling","RatioDw_Dg"] # TODO
+    #",, , "desiredSTD"
+    ##"stopping_volume", "RatioDw_Dg","desiredSTD" "diffusionTensorExponent""Dw", #"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
 
     # init parameter
     settings["rho"] = 0.5 #0.5#0.1 # TODO
-    settings["Dw"] = 40 # 5.0 #TODO
-    settings["RatioDw_Dg"] = 10.0
+    settings["Dw"] = 15 # 5.0 #TODO
+    settings["RatioDw_Dg"] = 10.0 #TODO
     settings["diffusionEllipsoidScaling"] = 1
     settings["diffusionTensorExponent"] = 1
+    settings["desiredSTD"] = 1#0 #  0.3 # 0 = Fisher kolmogorov # TODO
+    settings["viewLossAsProbability"] = False#True # TODO multiplies the losses for flair and T1c
+
     settings["thresholdT1c"] = 0.66
     settings["thresholdFlair"] = 0.33
-    settings["stopping_volume"] = 50000# TODO 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))
-    settings["stopping_time"] = 10000000
+    settings["stopping_volume"] = 0.7*(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)) #10 *(np.sum(edema) + np.sum(necrotic) + np.sum(enhancing))  #  #TODO
+    settings["stopping_time"] = 10000000000 # 100 days 
 
 
     # center of mass
@@ -65,23 +70,24 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["rho_range"] = [0.01, 5.0]
     settings["Dw_range"] = [0.001, 120.0] #TODO
     settings["RatioDw_Dg_range"] = [0.1, 100.0] # TODO
+    settings["desiredSTD_range"] = [0.0, 3.0]
     settings["thresholdT1c_range"] = [0.5, 0.9]
     settings["thresholdFlair_range"] = [0.01, 0.5]
     settings["NxT1_pct_range"] = [0,1]
     settings["NyT1_pct_range"] = [0,1]
     settings["NzT1_pct_range"] = [0,1]
     settings["diffusionEllipsoidScaling_range"] = [0.1, 100.0]
-    settings["diffusionTensorExponent_range"] = [0.01, 5.0]
+    settings["diffusionTensorExponent_range"] = [0.0, 3.0] # TODO
     settings["stopping_volume_range"] = [0.1 * (np.sum(edema) + np.sum(necrotic) + np.sum(enhancing)), np.sum(brainmask) /2]
     settings["stopping_time_range"] = [0, 1000000000]
 
 
     # algorithm settings
     settings["workers"] =0#9# 9#9#0#9#0 #9# 1#9 #9#4 # 9 TODO
-    settings["sigma0"] = 0.02 # TODO
-    weighLossByVolume = True
+    settings["sigma0"] = 0.02 # 0.02 # TODO
+    weighLossByVolume = False
     settings["weighLossByVolume"] = weighLossByVolume
-    settings["use_homogen_gm"] =  True # TODO
+    settings["use_homogen_gm"] =  False #True # TODO
 
     if weighLossByVolume:
         volumeCore = np.sum(necrotic) + np.sum(enhancing)
@@ -94,8 +100,8 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
         settings["lossLambdaFlair"] = relVolumeEdema
         print("rel core volume:", relVolumeCore, "rel edema volume:", relVolumeEdema)
     else: #TODO
-        settings["lossLambdaT1"] = 0 #0.5 #0.2
-        settings["lossLambdaFlair"] = 1 #0.5 # 0.8
+        settings["lossLambdaT1"] = 0.5 #0.2
+        settings["lossLambdaFlair"] = 0.5 # 0.8
 
     # if dir it changes with generations: key = from relative generations, value = resolution factor
     settings["resolution_factor"] = 0.5#{ 0: 0.5, 0.7: 0.6, 0.8:0.7, 0.85:0.8, 0.9: 0.9, 0.95: 1.0} # 0.5 #{ 0: 0.5, 0.75: 0.6, 0.85:0.8, 0.9: 0.8, 0.95: 1.0}
@@ -185,12 +191,12 @@ if False:# __name__ == '__main__':
         patientID = sys.argv[1]
         process_patient(patientID)
     else:
-        process_patient(14)
+        process_patient(131)
 
 
 
 if False: #True: #__name__ == '__main__':
-    process_patient(16) #TODO
+    process_patient(14) #TODO
 
     for i in range(14, 160):
         break # TODO
@@ -206,9 +212,7 @@ def try_process_patient(patientID):
         print(f"Error processing patient {patientID}: {e}")
 
 if True:
-
-
-    #patientList = [238, 250, 246, 263, 364]
-    with Pool(5) as p:
-        p.map(try_process_patient, range(14, 300))
+    patientListDTI = [212, 238, 250, 246, 263, 364, 423, 445, 1012, 1070 ]
+    with Pool(8) as p:
+        p.map(try_process_patient,patientListDTI)#range(14, 300))# patientListDTI)
         
