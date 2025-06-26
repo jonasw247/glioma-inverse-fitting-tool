@@ -6,29 +6,16 @@ import nibabel as nib
 from skimage import measure
 import trimesh
 
-#fkPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_28_testDTIFKOnly_init_larger_std_butterfly/"
-fkPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_26_testDTI_fix_std/"# good run
-#
-# #"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/26_testDTI_fix_vol/"
-
-#dtiPath ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_28_testDTIFK_init_larger_std_butterfly/" # gm homo
-
-dtiPath ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_28_testDTI_no_homo_gm/" # full DTI
-
-
-
-dtiPath ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_27_testDTI_init_larger_std/"
-# 
-
-# #/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_27_testDTI_init_larger_std/"#"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_26_testDTI_fix_vol/"# "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_23_testDTI_new/"#16_testDTI/"# "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_13_testDTI/"#
+dtiPath ="/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_28_testDTIFK_init_larger_std_butterfly/"
+fkPath = "/mnt/8tb_slot8/jonas/workingDirDatasets/brats/cma-es_results/cma-es_results_28_testDTIFKOnly_init_larger_std_butterfly/"
 
 #evolutionary_sampling18_testFK_butterfly
 
-patID = 14
+patID = 246
 originalTumorLocationPath = f"/mnt/8tb_slot8/jonas/workingDirDatasets/brats/brats_good_t1_and_t1c_smoothed_and_masked/BraTS2021_{str(patID).zfill(5)}/preop/"
 
 originalSegmentation = nib.load(originalTumorLocationPath + f"sub-BraTS2021_{str(patID).zfill(5)}_ses-preop_space-sri_seg.nii.gz").get_fdata()
-gm_tissue = nib.load(tissuePath).get_fdata()
+#gm_tissue = nib.load(tissuePath).get_fdata()
 
 #sub-BraTS2021_00014_ses-preop_space-sri_gen_101_result.nii.gz
 fkPrediction =  nib.load(fkPath + f"BraTS2021_{str(patID).zfill(5)}/sub-BraTS2021_{str(patID).zfill(5)}_ses-preop_space-sri_gen_101_result.nii.gz").get_fdata()
@@ -41,6 +28,8 @@ rgbTensors = nib.load(rgbPath).get_fdata()[:, :, :, 0, :]
 z = 35
 centerOfMass = np.array(np.where(originalSegmentation > 0)).mean(axis=1).astype(int)
 x,y,z = centerOfMass
+
+x,y,z = 160,160, 74
 plt.figure(figsize=(6, 6))
 plt.imshow(brainTissue[:, :, z], cmap="gray", alpha=1)
 plt.imshow(fkPrediction[:, :, z], cmap="hot", alpha=dtiPrediction[:, :, z], vmin=0, vmax=1)
@@ -58,8 +47,8 @@ rgbTensors = rgbTensors # Remove the last dimension if it is not needed**2
 
 plt.figure(figsize=(6, 6))
 plt.imshow(rgbTensors[:, :, z,:], cmap="gray", alpha=1)
-plt.imshow(dtiPrediction[:, :, z], cmap="hot", alpha=0.5, vmin=0, vmax=1)
-plt.imshow(originalSegmentation[:, :, z], alpha=(originalSegmentation[:, :, z] > 0) * 0.4, cmap="Greens")
+#plt.imshow(dtiPrediction[:, :, z], cmap="hot", alpha=0.5, vmin=0, vmax=1)
+#plt.imshow(originalSegmentation[:, :, z], alpha=(originalSegmentation[:, :, z] > 0) * 0.4, cmap="Greens")
 plt.xlabel("Slice 50")
 plt.ylabel("Slice 50")
 plt.title("DTI Prediction")
@@ -76,36 +65,88 @@ def getCoolLookingRGB(rgbTensors):
     norm[norm == 0] = 1  # avoid division by zero
     rgbTensorsPlot = rgbTensors / norm  * std  # Normalize and scale by standard deviation
     rgbTensorsPlot /= np.max(rgbTensorsPlot)
-    return rgbTensorsPlot
+    return rgbTensorsPlot**0.7
 
 #means = np.mean(rgbTensors, axis=2)
 #rgbTensorsPlot = rgbTensors- means + 0.5 # Adjust brightness
 
 rgbTensorsPlot = getCoolLookingRGB(rgbTensors)
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+# --- DTI Prediction on RGB Tensors ---
+#%%
+stops = [
+    (0.0,  'red'),   # 0   → black
+    #(0.1,  'red'),     # 0.1 → red
+    (0.6,  'yellow'),  # 0.4 → yellow
+    (1.0,  'white'),   # 1   → white
+]
+alphaLim = 0.01
+from matplotlib.colors import LinearSegmentedColormap
 
+custom_cmap = LinearSegmentedColormap.from_list('black_red_yellow_white', stops)
+# Axial (z)
 plt.figure(figsize=(6, 6))
-plt.imshow(rgbTensorsPlot[:, :, z,:], alpha=1)
-plt.imshow(dtiPrediction[:, :, z], cmap="hot", alpha=0.5, vmin=0, vmax=1)
+plt.imshow(rgbTensors[:, :, z, :], alpha=1)
+plt.imshow(dtiPrediction[:, :, z], cmap=custom_cmap, alpha=(dtiPrediction[:, :, z]> 0.01)*dtiPrediction[:, :, z]**0.5, vmin=0, vmax=1)
 plt.imshow(originalSegmentation[:, :, z], alpha=(originalSegmentation[:, :, z] > 0) * 0.4, cmap="Greens")
-plt.title("DTI Prediction")
+plt.title("DTI Prediction on RGB Tensors - Axial (z)")
 plt.axis("off")
+plt.tight_layout()
 plt.show()
 
-#%%y
+#%%
+# Coronal (y)
 plt.figure(figsize=(6, 6))
-plt.imshow(rgbTensorsPlot[:, y, :, :], alpha=1)
-plt.imshow(dtiPrediction[:, y, :], cmap="hot", alpha=0.5, vmin=0, vmax=1)
-plt.imshow(originalSegmentation[:, y, :], alpha=(originalSegmentation[:, y, :] > 0) * 0.4, cmap="Greens")
-plt.title("DTI Prediction")
+plt.imshow(rgbTensors[:, y, :, :], alpha=1)
+plt.imshow(dtiPrediction[:, y, :], cmap=custom_cmap, alpha= (dtiPrediction[:, y, :]> 0.01)*dtiPrediction[:, y, :]**0.5, vmin=0, vmax=1)
+#plt.imshow(originalSegmentation[:, y, :], alpha=(originalSegmentation[:, y, :] > 0) * 0.4, cmap="Greens")
+plt.title("DTI Prediction on RGB Tensors - Coronal (y)")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
 
-
-#%% x
+"""# Sagittal (x)
 plt.figure(figsize=(6, 6))
-plt.imshow(rgbTensorsPlot[x, :, :, :], alpha=1)
-plt.imshow(dtiPrediction[x, :, :], cmap="hot", alpha=0.5, vmin=0, vmax=1)
+plt.imshow(rgbTensorsPlot[x, :, :, :], alpha=1) 
+plt.imshow(dtiPrediction[x, :, :], cmap="hot", alpha=dtiPrediction[x, :, :], vmin=0, vmax=1)
 plt.imshow(originalSegmentation[x, :, :], alpha=(originalSegmentation[x, :, :] > 0) * 0.4, cmap="Greens")
-plt.title("DTI Prediction")
-    
+plt.title("DTI Prediction on RGB Tensors - Sagittal (x)")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+"""
+# --- FK Prediction on Brain Tissue ---
+#%%
+# Axial (z)
+plt.figure(figsize=(6, 6))
+plt.imshow(brainTissue[:, :, z], cmap="gray", alpha=1)
+plt.imshow(fkPrediction[:, :, z], cmap="hot", alpha=fkPrediction[:, :, z], vmin=0, vmax=1)
+plt.imshow(originalSegmentation[:, :, z], alpha=(originalSegmentation[:, :, z] > 0) * 0.4, cmap="Greens")
+plt.title("FK Prediction - Axial (z)")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+
+
+# Coronal (y)
+plt.figure(figsize=(6, 6))
+plt.imshow(brainTissue[:, y, :], cmap="gray", alpha=1)
+plt.imshow(fkPrediction[:, y, :], cmap="hot", alpha=fkPrediction[:, y, :], vmin=0, vmax=1)
+plt.imshow(originalSegmentation[:, y, :], alpha=(originalSegmentation[:, y, :] > 0) * 0.4, cmap="Greens")
+plt.title("FK Prediction - Coronal (y)")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+"""
+# Sagittal (x)
+plt.figure(figsize=(6, 6))
+plt.imshow(brainTissue[x, :, :], cmap="gray", alpha=1)
+plt.imshow(fkPrediction[x, :, :], cmap="hot", alpha=fkPrediction[x, :, :], vmin=0, vmax=1)
+plt.imshow(originalSegmentation[x, :, :], alpha=(originalSegmentation[x, :, :] > 0) * 0.4, cmap="Greens")
+plt.title("FK Prediction - Sagittal (x)")
+plt.axis("off")
+plt.tight_layout()
+plt.show()"""
 #%%
 
 

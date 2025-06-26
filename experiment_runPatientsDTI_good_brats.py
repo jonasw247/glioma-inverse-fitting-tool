@@ -18,7 +18,7 @@ import sys
 from multiprocessing import Pool, cpu_count
 
 doLog = True
-experimentName ="28_testDTI_no_homo_gm"#"23_testDTI_new_STD_and_exp_butterfly"#"26_testDTI_fix_std"#"17_testDTIexponent" #"15_testDTI"# "12_testDTI_highRes"#
+experimentName ="26_testDTI_fix_std"#"23_testDTI_new_STD_and_exp_butterfly"#"26_testDTI_fix_std"#"17_testDTIexponent" #"15_testDTI"# evolutionary_sampling26_testDTI_fix_std
 debug = False # TODOCheck
 if debug:
     experimentName += "debug"
@@ -40,8 +40,8 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
 
     # fixed parameters that are not varied
     # only optimize origin, rho and final volume for now
-    settings["fixedParameters"] = [   "stopping_time",  "thresholdT1c", "thresholdFlair",  "rho", "diffusionTensorExponent","diffusionEllipsoidScaling","RatioDw_Dg"] # TODO
-    #",, , "desiredSTD"
+    settings["fixedParameters"] = [   "stopping_time",  "thresholdT1c", "thresholdFlair",  "rho", "diffusionTensorExponent","diffusionEllipsoidScaling","RatioDw_Dg","desiredSTD"] # TODO
+    #",, , 
     ##"stopping_volume", "RatioDw_Dg","desiredSTD" "diffusionTensorExponent""Dw", #"diffusionTensorExponent",,"Dw",,"NxT1_pct", "NyT1_pct", "NzT1_pct"], , "thresholdFlair", 
 
     # init parameter
@@ -50,7 +50,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["RatioDw_Dg"] = 10.0 #TODO
     settings["diffusionEllipsoidScaling"] = 1
     settings["diffusionTensorExponent"] = 1
-    settings["desiredSTD"] = 1#0 #  0.3 # 0 = Fisher kolmogorov # TODO
+    settings["desiredSTD"] = 0#1#0 #  0.3 # 0 = Fisher kolmogorov # TODO
     settings["viewLossAsProbability"] = False#True # TODO multiplies the losses for flair and T1c
 
     settings["thresholdT1c"] = 0.66
@@ -87,7 +87,7 @@ def run(edema, necrotic, enhancing, affine, diffusionTensors, brainmask, resultp
     settings["sigma0"] = 0.02 # 0.02 # TODO
     weighLossByVolume = False
     settings["weighLossByVolume"] = weighLossByVolume
-    settings["use_homogen_gm"] =  False #True # TODO
+    settings["use_homogen_gm"] =  True # TODO
 
     if weighLossByVolume:
         volumeCore = np.sum(necrotic) + np.sum(enhancing)
@@ -212,7 +212,11 @@ def try_process_patient(patientID):
         print(f"Error processing patient {patientID}: {e}")
 
 if True:
-    patientListDTI = [212, 238, 250, 246, 263, 364, 423, 445, 1012, 1070 ]
-    with Pool(8) as p:
-        p.map(try_process_patient,patientListDTI)#range(14, 300))# patientListDTI)
+    #patientListDTI = [212, 238, 250, 246, 263, 364, 423, 445, 1012, 1070 ]
+    patientListDTI = os.listdir("/mnt/8tb_slot8/jonas/workingDirDatasets/brats/brats_good_t1_and_t1c_smoothed_and_masked/")
+    patientListDTI = [int(p.split("_")[-1]) for p in patientListDTI]
+    patientListDTI.sort()
+    print(patientListDTI)
+    with Pool(15) as p:
+        p.map(try_process_patient,range(231, 450))# patientListDTI) patientListDTI)
         
